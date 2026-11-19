@@ -158,15 +158,23 @@ function renderChatMessage(message) {
   meta.className = 'chat-message-meta';
   const name = document.createElement('strong');
   name.textContent = message.name || 'Mitglied';
-  const cosmetic = shopState.items.find(item => item.id === message.equippedItem) || null;
-  if (cosmetic?.type === 'name') name.style.color = cosmetic.color;
-  if (cosmetic?.type === 'badge') { const badge = document.createElement('span'); badge.className = 'cosmetic-badge'; badge.textContent = cosmetic.badge; badge.title = cosmetic.name; name.after(badge); }
+  const nameCosmetic = shopState.items.find(item => item.id === message.equippedItem && item.type === 'name') || null;
+  const badgeCosmetic = shopState.items.find(item => item.id === message.equippedBadge && item.type === 'badge') || null;
+  if (nameCosmetic) name.style.color = nameCosmetic.color;
+  meta.append(name);
+  if (badgeCosmetic) {
+    const badge = document.createElement('span');
+    badge.className = 'cosmetic-badge';
+    badge.textContent = badgeCosmetic.badge;
+    badge.title = badgeCosmetic.name;
+    meta.append(badge);
+  }
   if (message.role) {
     const role = document.createElement('span');
     role.className = 'message-role role-' + message.role;
     role.textContent = ({owner:'OWNER',admin:'ADMIN',moderator:'MOD',member:''})[message.role] || '';
-    meta.append(name, role);
-  } else meta.append(name);
+    meta.append(role);
+  }
   const time = document.createElement('time');
   time.dateTime = new Date(message.time).toISOString();
   time.textContent = new Date(message.time).toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
@@ -304,10 +312,20 @@ function connectChat() {
         const meta = row.querySelector('.chat-message-meta');
         const name = meta?.querySelector('strong');
         if (!name) return;
-        const item = shopState.items.find(entry => entry.id === data.itemId);
-        name.style.color = item?.type === 'name' ? item.color : '';
-        meta.querySelector('.cosmetic-badge')?.remove();
-        if (item?.type === 'badge') { const badge = document.createElement('span'); badge.className = 'cosmetic-badge'; badge.textContent = item.badge; badge.title = item.name; name.after(badge); }
+        if (data.itemType === 'badge') {
+          meta.querySelector('.cosmetic-badge')?.remove();
+          const badgeItem = shopState.items.find(entry => entry.id === data.itemId && entry.type === 'badge');
+          if (badgeItem) {
+            const badge = document.createElement('span');
+            badge.className = 'cosmetic-badge';
+            badge.textContent = badgeItem.badge;
+            badge.title = badgeItem.name;
+            name.after(badge);
+          }
+        } else {
+          const nameItem = shopState.items.find(entry => entry.id === data.itemId && entry.type === 'name');
+          name.style.color = nameItem?.color || '';
+        }
       });
     }
     else if (data.type === 'message_update' && data.message) {
@@ -354,7 +372,7 @@ async function loadShop() {
     const price = document.createElement('strong'); price.className = 'shop-price'; price.textContent = '🪙 ' + item.price;
     const button = document.createElement('button'); button.type = 'button'; button.className = 'chat-primary shop-action';
     const owned = data.owned.includes(item.id);
-    const equipped = data.equippedItem === item.id;
+    const equipped = item.type === 'badge' ? data.equippedBadge === item.id : data.equippedItem === item.id;
     button.textContent = !owned ? 'Kaufen' : (equipped ? 'Ablegen' : 'Anlegen');
     button.disabled = false;
     button.addEventListener('click', async () => {
@@ -363,12 +381,9 @@ async function loadShop() {
         if (!owned) {
           await api('/api/shop/buy', { itemId: item.id });
           document.getElementById('shopFeedback').textContent = item.name + ' gekauft!';
-        } else if (equipped) {
-          await api('/api/shop/equip', { itemId: '' });
-          document.getElementById('shopFeedback').textContent = 'Cosmetic abgelegt.';
         } else {
-          await api('/api/shop/equip', { itemId: item.id });
-          document.getElementById('shopFeedback').textContent = 'Cosmetic angelegt!';
+          await api('/api/shop/equip', { itemId: equipped ? '' : item.id, itemType: item.type });
+          document.getElementById('shopFeedback').textContent = equipped ? 'Cosmetic abgelegt.' : 'Cosmetic angelegt!';
         }
         await loadShop();
       } catch (error) {
@@ -512,6 +527,9 @@ chatMessageForm.addEventListener('submit', event => {
   chatMessageInput.focus();
 });
 channelButtons.forEach(button => button.addEventListener('click', () => {
+  shopPanel.hidden = true;
+  adminPanel.hidden = true;
+  chatRoom.hidden = false;
   if (selectedChannel === button.dataset.channel) return;
   selectedChannel = button.dataset.channel;
   channelButtons.forEach(item => item.classList.toggle('active', item === button));
