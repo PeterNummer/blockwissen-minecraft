@@ -311,3 +311,21 @@ footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-s
 .shop-action-unequip:hover{background:#b92d32!important;border-color:#f05a60!important;box-shadow:0 4px 10px #da373c40}
 .shop-action-equip:active,.shop-action-unequip:active{transform:translateY(1px);box-shadow:0 1px 3px #0004}
 .shop-action-equip:focus-visible,.shop-action-unequip:focus-visible{outline:2px solid #fff;outline-offset:2px}
+
+
+/* Discord-inspired cosmetic name treatments */
+.cosmetic-name{
+  display:inline-block;
+  font-weight:800;
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent!important;
+  -webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 5px var(--cosmetic-glow));
+  letter-spacing:.01em;
+}
+.cosmetic-name-mint_name{background-image:linear-gradient(105deg,#62dfb4 0%,#a0f2d1 48%,#54cfa8 100%);--cosmetic-glow:#55d9ad66}
+.cosmetic-name-gold_name{background-image:linear-gradient(105deg,#eab849 0%,#ffe6a0 48%,#d99b28 100%);--cosmetic-glow:#f4c65b66}
+.cosmetic-name-violet_name{background-image:linear-gradient(105deg,#a982f3 0%,#dfc5ff 48%,#9870e8 100%);--cosmetic-glow:#b58aff70}
+.cosmetic-name-owner_red_name{background-image:linear-gradient(105deg,#ff5968 0%,#ffabb0 48%,#e83e55 100%);--cosmetic-glow:#ff596870}
+.shop-cosmetic-preview{font-size:1.08rem;min-height:1.4em}
