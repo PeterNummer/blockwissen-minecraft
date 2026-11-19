@@ -254,6 +254,41 @@ export class ChatRoom extends DurableObject {
     try { data = JSON.parse(rawMessage); } catch { ws.send(JSON.stringify({ type: "error", message: "Ungültige Nachricht." })); return; }
     const attachment = ws.deserializeAttachment() || {};
     if (!attachment.authenticated) { ws.close(1008, "Nicht autorisiert"); return; }
+    const history = await this.ctx.storage.get("history") || [];
+    const broadcast = payload => {
+      for (const socket of this.ctx.getWebSockets()) {
+        const state = socket.deserializeAttachment();
+        if (state?.authenticated && socket.readyState === WebSocket.OPEN) {
+          try { socket.send(JSON.stringify(payload)); } catch {}
+        }
+      }
+    };
+    if (data.type === "message_edit" || data.type === "message_delete") {
+      if (attachment.role !== "owner") {
+        ws.send(JSON.stringify({ type: "error", message: "Nur der Owner darf Nachrichten bearbeiten oder löschen." }));
+        return;
+      }
+      const index = history.findIndex(item => item.id === data.id);
+      if (index < 0) {
+        ws.send(JSON.stringify({ type: "error", message: "Nachricht nicht gefunden." }));
+        return;
+      }
+      if (data.type === "message_delete") {
+        history.splice(index, 1);
+        await this.ctx.storage.put("history", history);
+        broadcast({ type: "message_delete", id: data.id });
+        return;
+      }
+      if (typeof data.text !== "string" || !data.text.trim()) {
+        ws.send(JSON.stringify({ type: "error", message: "Die Nachricht darf nicht leer sein." }));
+        return;
+      }
+      history[index].text = data.text.trim().slice(0, 1000);
+      history[index].editedAt = Date.now();
+      await this.ctx.storage.put("history", history);
+      broadcast({ type: "message_update", message: history[index] });
+      return;
+    }
     if (data.type !== "message" || typeof data.text !== "string") return;
     const text = data.text.trim().slice(0, 1000);
     if (!text) return;
@@ -264,16 +299,9 @@ export class ChatRoom extends DurableObject {
     }
     ws.serializeAttachment({ ...attachment, lastMessageAt: now });
     const message = { id: crypto.randomUUID(), userId: attachment.id, name: attachment.name, role: attachment.role, text, time: now };
-    const history = await this.ctx.storage.get("history") || [];
     history.push(message);
     await this.ctx.storage.put("history", history.slice(-100));
-    const payload = JSON.stringify({ type: "message", message });
-    for (const socket of this.ctx.getWebSockets()) {
-      const state = socket.deserializeAttachment();
-      if (state?.authenticated && socket.readyState === WebSocket.OPEN) {
-        try { socket.send(payload); } catch {}
-      }
-    }
+    broadcast({ type: "message", message });
   }
   async webSocketClose(ws, code, reason) {
     try { ws.close(code, reason); } catch { try { ws.close(); } catch {} }
