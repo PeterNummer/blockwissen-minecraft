@@ -1,6 +1,19 @@
 const overlay=document.getElementById('chatOverlay');
 function openChat(){overlay.classList.add('open');overlay.setAttribute('aria-hidden','false');document.body.style.overflow='hidden'}
-function closeChat(){overlay.classList.remove('open');overlay.setAttribute('aria-hidden','true');document.body.style.overflow=''}
+function closeChat(){
+  if (typeof chatSocket !== 'undefined' && chatSocket) {
+    const socket = chatSocket;
+    chatSocket = null;
+    socket.close();
+  }
+  if (typeof chatIdentity !== 'undefined') chatIdentity = null;
+  if (typeof chatAuthenticated !== 'undefined') chatAuthenticated = false;
+  if (typeof showChatLogin === 'function') showChatLogin();
+  if (typeof setChatConnection === 'function') setChatConnection('offline', 'Nicht verbunden');
+  overlay.classList.remove('open');
+  overlay.setAttribute('aria-hidden','true');
+  document.body.style.overflow='';
+}
 document.getElementById('closeChat').addEventListener('click',closeChat);
 
 const guideModal=document.getElementById('guideModal');
@@ -163,16 +176,3 @@ channelButtons.forEach(button => button.addEventListener('click', () => {
   chatMessageInput.placeholder = 'Nachricht an # ' + selectedChannel;
   if (chatIdentity) connectChat();
 }));
-const originalCloseChat = closeChat;
-closeChat = function() {
-  if (chatSocket) {
-    const socket = chatSocket;
-    chatSocket = null;
-    socket.close();
-  }
-  chatIdentity = null;
-  chatAuthenticated = false;
-  showChatLogin();
-  setChatConnection('offline', 'Nicht verbunden');
-  originalCloseChat();
-};
