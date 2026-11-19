@@ -161,7 +161,7 @@ function renderChatMessage(message) {
   }
   meta.append(time);
   row.append(meta, body);
-  if (chatUser?.role === 'owner') {
+  if (["owner","admin","moderator"].includes(chatUser?.role)) {
     const menuWrap = document.createElement('div');
     menuWrap.className = 'message-menu-wrap';
     const menuButton = document.createElement('button');
@@ -173,17 +173,19 @@ function renderChatMessage(message) {
     const menu = document.createElement('div');
     menu.className = 'message-menu';
     menu.hidden = true;
-    const edit = document.createElement('button');
-    edit.type = 'button';
-    edit.textContent = 'Bearbeiten';
-    edit.addEventListener('click', () => {
-      const updated = window.prompt('Nachricht bearbeiten:', body.textContent);
-      menu.hidden = true;
-      menuButton.setAttribute('aria-expanded', 'false');
-      if (updated === null || !updated.trim()) return;
-      if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
-      chatSocket.send(JSON.stringify({type:'message_edit', id:message.id, text:updated}));
-    });
+    if (chatUser.role === 'owner') {
+      const edit = document.createElement('button');
+      edit.type = 'button';
+      edit.textContent = 'Bearbeiten';
+      edit.addEventListener('click', () => {
+        const updated = window.prompt('Nachricht bearbeiten:', body.textContent);
+        menu.hidden = true;
+        menuButton.setAttribute('aria-expanded', 'false');
+        if (updated === null || !updated.trim()) return;
+        if (chatSocket && chatSocket.readyState === WebSocket.OPEN) chatSocket.send(JSON.stringify({type:'message_edit', id:message.id, text:updated}));
+      });
+      menu.append(edit);
+    }
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.className = 'message-menu-delete';
@@ -194,7 +196,7 @@ function renderChatMessage(message) {
       if (!window.confirm('Diese Nachricht wirklich löschen?')) return;
       if (chatSocket && chatSocket.readyState === WebSocket.OPEN) chatSocket.send(JSON.stringify({type:'message_delete', id:message.id}));
     });
-    menu.append(edit, remove);
+    menu.append(remove);
     menuButton.addEventListener('click', event => {
       event.stopPropagation();
       const opening = menu.hidden;
@@ -240,6 +242,11 @@ function connectChat() {
       (Array.isArray(data.messages) ? data.messages : []).forEach(renderChatMessage);
       chatMessageInput.focus();
     } else if (data.type === 'message' && data.message) renderChatMessage(data.message);
+    else if (data.type === 'role_update' && data.userId === chatUser?.id) {
+      chatUser.role = data.role;
+      showAccount();
+      connectChat();
+    }
     else if (data.type === 'message_update' && data.message) {
       const existing = chatMessages.querySelector('[data-message-id="' + CSS.escape(data.message.id) + '"]');
       if (existing) {
@@ -298,7 +305,7 @@ async function loadAdminUsers() {
     const save = document.createElement('button');
     save.textContent = 'Rolle speichern';
     save.addEventListener('click', async () => {
-      try { await api('/api/admin/role', {userId:user.id, role:role.value}); document.getElementById('adminFeedback').textContent = 'Rolle aktualisiert.'; }
+      try { await api('/api/admin/role', {userId:user.id, role:role.value}); document.getElementById('adminFeedback').textContent = 'Rolle aktualisiert. Die Änderung wird sofort in allen offenen Chats übernommen.'; await loadAdminUsers(); }
       catch (error) { document.getElementById('adminFeedback').textContent = error.message; }
     });
     const ban = document.createElement('button');
