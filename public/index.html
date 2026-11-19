@@ -48,7 +48,7 @@
       <div class="chat-side-bottom"><span class="connection-dot" id="connectionDot"></span><span id="connectionLabel">Nicht verbunden</span></div><div class="chat-account" id="chatAccount" hidden><strong id="accountName"></strong><span id="accountRole"></span><button type="button" id="openProfile">👤 Mein Profil</button><span class="coin-balance" id="coinBalance">🪙 100 Coins</span><button type="button" id="openShop">🛍 Coin-Shop</button><button type="button" id="openAdmin" hidden>⚙ Einstellungen</button><button type="button" id="chatLogout">Abmelden</button></div>
     </aside>
     <section class="chat-main">
-      <div class="chat-top"><span id="activeChannel"># willkommen</span><div class="chat-top-actions"><button type="button" class="chat-refresh" id="chatRefresh" title="Nachrichten und Rollen aktualisieren">↻ Aktualisieren</button><button class="close" id="closeChat">Schließen&nbsp; ✕</button></div></div>
+      <div class="chat-top"><span id="activeChannel"># willkommen</span><div class="chat-top-actions"><button type="button" id="openNotifications" class="chat-refresh">🔔 <span id="notificationCount">0</span></button><button type="button" id="openDMs" class="chat-refresh">✉ Nachrichten</button><button type="button" class="chat-refresh" id="chatRefresh" title="Nachrichten und Rollen aktualisieren">↻ Aktualisieren</button><button class="close" id="closeChat">Schließen&nbsp; ✕</button></div></div>
       <div class="chat-login" id="chatLogin">
         <div class="login-card">
           <div class="welcome-icon">💬</div><h2>Willkommen bei TYQORA</h2>
@@ -97,8 +97,9 @@
     </section>
   </div>
 </div>
+<div class="community-modal" id="communityHub" hidden><section class="community-dialog community-hub-dialog"><button class="close community-close" id="closeCommunity" type="button">✕</button><div class="community-tabs"><button type="button" data-hub-tab="notifications">Benachrichtigungen</button><button type="button" data-hub-tab="dms">Private Nachrichten</button></div><div id="communityHubBody"></div></section></div>
 <div class="community-modal" id="profileModal" hidden><section class="community-dialog"><button class="close community-close" id="closeProfile" type="button">✕</button><div id="profileView"></div></section></div>
-<script src="/js/main.js?v=community-profiles-1" defer></script>
-<script src="/js/community.js?v=profiles-1" defer></script>
+<script src="/js/main.js?v=community-hub-1" defer></script>
+<script src="/js/community.js?v=community-hub-1" defer></script>
 </body>
 </html>
