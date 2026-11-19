@@ -353,4 +353,40 @@ async function restoreSession() {
     sessionStorage.removeItem('tyqora_session');
   }
 }
+
+const ownerRecoveryForm = document.getElementById('ownerRecoveryForm');
+document.getElementById('showOwnerRecovery').addEventListener('click', () => {
+  chatLoginForm.hidden = true;
+  ownerRecoveryForm.hidden = false;
+  chatLoginFeedback.textContent = '';
+});
+document.getElementById('cancelOwnerRecovery').addEventListener('click', () => {
+  ownerRecoveryForm.hidden = true;
+  chatLoginForm.hidden = false;
+});
+ownerRecoveryForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  const button = document.getElementById('ownerRecoveryButton');
+  button.disabled = true;
+  button.textContent = 'Setze zurück …';
+  chatLoginFeedback.textContent = '';
+  try {
+    const result = await api('/api/owner/recover', {
+      name: document.getElementById('recoveryName').value.trim(),
+      password: document.getElementById('recoveryPassword').value,
+      recoveryCode: document.getElementById('recoveryCode').value
+    });
+    ownerRecoveryForm.reset();
+    ownerRecoveryForm.hidden = true;
+    chatLoginForm.hidden = false;
+    setAuthMode('login');
+    chatNameInput.value = document.getElementById('recoveryName').value.trim();
+    chatLoginFeedback.textContent = result.message || 'Passwort zurückgesetzt. Bitte anmelden.';
+  } catch (error) {
+    chatLoginFeedback.textContent = error.message;
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Passwort zurücksetzen';
+  }
+});
 restoreSession();
