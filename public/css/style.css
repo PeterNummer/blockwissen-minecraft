@@ -132,3 +132,39 @@ footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-s
 .brand-wordmark{display:flex;flex-direction:column;line-height:.95;letter-spacing:1.1px;font-weight:900}
 .brand-wordmark>span{margin-top:5px;color:#9ce36b;font-size:.62em;letter-spacing:2.8px}
 @media(max-width:520px){.brand{gap:7px}.brand-mark{width:34px;height:34px;flex-basis:34px}.brand-wordmark{font-size:.88rem}}
+
+
+/* Sichtbarer Bereich zum sicheren Zurücksetzen aller Accounts */
+.account-reset{
+  display:block!important;
+  margin:18px auto 0;
+  padding:14px;
+  width:100%;
+  text-align:left;
+  background:#2b1b1b;
+  border:1px solid #e17878;
+  border-radius:12px;
+  color:#f5eeee;
+}
+.account-reset summary{
+  display:list-item;
+  color:#ffaaaa;
+  font-weight:800;
+  font-size:.95rem;
+  cursor:pointer;
+  padding:4px 2px;
+}
+.account-reset[open] summary{margin-bottom:12px}
+.account-reset p{font-size:.82rem;color:#e5caca;line-height:1.45}
+#resetAccountsForm{display:grid;gap:9px;margin-top:12px}
+#resetAccountsForm label{font-size:.82rem;color:#f0dada;font-weight:700}
+#resetAccountsForm input{
+  width:100%;min-width:0;box-sizing:border-box;
+  border:1px solid #765454;background:#17191d;color:#fff;
+  border-radius:8px;padding:11px;font:inherit
+}
+#resetAccountsButton{
+  display:block!important;width:100%;margin-top:5px;
+  border:0;border-radius:9px;background:#b83c3c;color:#fff;
+  font:inherit;font-weight:800;padding:12px;cursor:pointer
+}
