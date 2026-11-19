@@ -64,6 +64,15 @@
             <button class="chat-primary" type="submit" id="chatLoginButton">Anmelden</button>
           </form>
           <p class="chat-feedback" id="chatLoginFeedback" role="status"></p>
+          <button type="button" class="text-button" id="showOwnerRecovery">Owner-Passwort vergessen?</button>
+          <form id="ownerRecoveryForm" hidden>
+            <p>Setze das Passwort deines bestehenden Owner-Accounts zurück.</p>
+            <label for="recoveryName">Owner-Benutzername</label><input id="recoveryName" maxlength="24" required autocomplete="username">
+            <label for="recoveryPassword">Neues Passwort</label><input id="recoveryPassword" type="password" minlength="8" maxlength="128" required autocomplete="new-password">
+            <label for="recoveryCode">Wiederherstellungscode</label><input id="recoveryCode" type="password" required autocomplete="off">
+            <button class="chat-primary" type="submit" id="ownerRecoveryButton">Passwort zurücksetzen</button>
+            <button type="button" class="text-button" id="cancelOwnerRecovery">Zurück zur Anmeldung</button>
+          </form>
           <p class="chat-privacy-hint">Verwende keine persönlichen Daten als Benutzernamen oder in Chatnachrichten.</p>
         </div>
       </div>
