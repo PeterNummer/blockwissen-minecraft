@@ -329,22 +329,3 @@ footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-s
 .cosmetic-name-violet_name{background-image:linear-gradient(105deg,#a982f3 0%,#dfc5ff 48%,#9870e8 100%);--cosmetic-glow:#b58aff70}
 .cosmetic-name-owner_red_name{background-image:linear-gradient(105deg,#ff5968 0%,#ffabb0 48%,#e83e55 100%);--cosmetic-glow:#ff596870}
 .shop-cosmetic-preview{font-size:1.08rem;min-height:1.4em}
-
-
-/* Matching Discord-style gradients on name-cosmetic shop buttons */
-.cosmetic-shop-button{border:1px solid #ffffff38!important;border-radius:9px!important;color:#18202a!important;font-weight:850!important;text-shadow:0 1px 0 #ffffff55;box-shadow:0 3px 12px #0005,inset 0 1px 0 #ffffff55;transition:filter .18s ease,transform .18s ease,box-shadow .18s ease!important}
-.cosmetic-shop-button:hover{filter:brightness(1.12) saturate(1.08);transform:translateY(-1px);box-shadow:0 5px 16px #0006,inset 0 1px 0 #ffffff66}
-.cosmetic-shop-button-mint_name{background:linear-gradient(110deg,#42c99b,#a0f2d1 52%,#43bd91)!important;border-color:#78e5bf!important}
-.cosmetic-shop-button-gold_name{background:linear-gradient(110deg,#d99a27,#ffe6a0 52%,#d99a27)!important;border-color:#f4d078!important}
-.cosmetic-shop-button-violet_name{background:linear-gradient(110deg,#9061df,#dfc5ff 52%,#8b5ddd)!important;border-color:#c4a4ff!important}
-.cosmetic-shop-button-owner_red_name{background:linear-gradient(110deg,#e83e55,#ffabb0 52%,#df344d)!important;border-color:#ff8290!important}
-
-
-/* Keep shop button surfaces unchanged; apply cosmetic gradients to the label only */
-.cosmetic-shop-button{background:#8bdc72!important;color:#142013!important;border:1px solid #ffffff38!important;box-shadow:0 2px 7px #0003!important;text-shadow:none!important}
-.cosmetic-shop-button:hover{background:#7dce66!important;filter:none!important;transform:translateY(-1px)}
-.cosmetic-shop-button .cosmetic-button-label{display:inline-block;font-weight:900;-webkit-background-clip:text;background-clip:text;color:transparent!important;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 3px var(--cosmetic-glow))}
-.cosmetic-shop-button-mint_name .cosmetic-button-label{background-image:linear-gradient(100deg,#168c69,#d0ffeb 50%,#168c69);--cosmetic-glow:#35d7a088}
-.cosmetic-shop-button-gold_name .cosmetic-button-label{background-image:linear-gradient(100deg,#9a6500,#fff0b4 50%,#9a6500);--cosmetic-glow:#f4c65b99}
-.cosmetic-shop-button-violet_name .cosmetic-button-label{background-image:linear-gradient(100deg,#7040bd,#f0ddff 50%,#7040bd);--cosmetic-glow:#b58aff99}
-.cosmetic-shop-button-owner_red_name .cosmetic-button-label{background-image:linear-gradient(100deg,#b51f38,#ffd1d5 50%,#b51f38);--cosmetic-glow:#ff596899}
