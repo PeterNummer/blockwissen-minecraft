@@ -297,3 +297,8 @@ footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-s
 .shop-secondary{width:100%;padding:9px;border:1px solid #4b5666;border-radius:8px;background:#252d39;color:#dce5f2;cursor:pointer}
 .cosmetic-badge{display:inline-flex;align-items:center;justify-content:center;margin-left:5px;color:#ffdc83;font-weight:900}
 @media(max-width:600px){.shop-panel{padding:15px}.shop-heading{align-items:flex-start;flex-direction:column}.shop-toolbar{flex-wrap:wrap}.coin-balance{font-size:.72rem}}
+
+.coin-admin-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:9px;padding-top:9px;border-top:1px solid #394454}
+.coin-admin-controls input{width:105px;min-width:85px;padding:8px 10px;border:1px solid #465366;border-radius:8px;background:#111a26;color:#edf3fb}
+.coin-admin-controls button{padding:8px 12px;border:1px solid #8b7135;border-radius:8px;background:#40351f;color:#ffdc83;font-weight:750;cursor:pointer}
+.coin-admin-controls button:disabled{opacity:.55;cursor:wait}
