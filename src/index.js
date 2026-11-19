@@ -245,8 +245,7 @@ export class AuthStore extends DurableObject {
       if (!user) return json({ error: "Account nicht gefunden." }, 404);
       const owned = this.sql.exec("SELECT item_id AS id FROM user_items WHERE user_id=?", data.userId).toArray().map(item => item.id);
       if (user.role === "owner") owned.push("owner_red_name");
-      const items = SHOP_ITEMS.filter(item => !item.ownerOnly || user.role === "owner");
-      return json({ coins: user.coins, equippedItem: user.equippedItem || "", equippedBadge: user.equippedBadge || "", owned, items });
+      return json({ coins: user.coins, equippedItem: user.equippedItem || "", equippedBadge: user.equippedBadge || "", owned, items: SHOP_ITEMS });
     }
     if (path === "/shop-buy") {
       const item = SHOP_ITEMS.find(entry => entry.id === data.itemId);
