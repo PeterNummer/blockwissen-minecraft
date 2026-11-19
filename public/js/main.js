@@ -1,5 +1,5 @@
 const overlay=document.getElementById('chatOverlay');
-function openChat(){overlay.classList.add('open');overlay.setAttribute('aria-hidden','false');document.body.style.overflow='hidden'}
+function openChat(){overlay.classList.add('open');overlay.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';if(typeof authToken!=='undefined'&&authToken&&typeof chatUser!=='undefined'&&chatUser)connectChat()}
 function closeChat(){
   if (typeof chatSocket !== 'undefined' && chatSocket) {
     const socket = chatSocket;
