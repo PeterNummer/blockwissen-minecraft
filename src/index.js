@@ -60,6 +60,26 @@ export default {
       }
     }
 
+    if (url.pathname === "/api/owner/recover" && request.method === "POST") {
+      try {
+        const data = await readBody(request);
+        if (!env.OWNER_RECOVERY_CODE || typeof data.recoveryCode !== "string" || data.recoveryCode !== env.OWNER_RECOVERY_CODE) {
+          return json({ error: "Der Wiederherstellungscode ist ungültig oder nicht eingerichtet." }, 403);
+        }
+        if (!validName(data.name) || !validPassword(data.password)) {
+          return json({ error: "Bitte Owner-Benutzernamen und ein neues Passwort (mindestens 8 Zeichen) eingeben." }, 400);
+        }
+        const salt = randomToken();
+        const passHash = await passwordHash(data.password, salt);
+        const result = await storeCall(env, "/recover-owner", { name: data.name, salt, passHash });
+        const resultText = await result.text();
+        return new Response(resultText, { status: result.status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
+      } catch (error) {
+        console.error("TYQORA owner recovery failed:", error?.stack || error);
+        return json({ error: "Interner Wiederherstellungsfehler. Bitte Worker Logs prüfen." }, 500);
+      }
+    }
+
     if (url.pathname === "/api/login" && request.method === "POST") {
       const data = await readBody(request);
       if (!validName(data.name) || !validPassword(data.password)) return json({ error: "Benutzername oder Passwort ist ungültig." }, 400);
@@ -144,6 +164,13 @@ export class AuthStore extends DurableObject {
       const id = crypto.randomUUID();
       this.sql.exec("INSERT INTO users (id,name,salt,pass_hash,role,created_at) VALUES (?,?,?,?,?,?)", id, data.name, data.salt, data.passHash, data.role, Date.now());
       return json({ ok: true, message: "Account erstellt. Du kannst dich jetzt anmelden." });
+    }
+    if (path === "/recover-owner") {
+      const owner = one("SELECT id FROM users WHERE name = ? AND role = 'owner'", data.name);
+      if (!owner) return json({ error: "Der angegebene Owner-Account wurde nicht gefunden." }, 404);
+      this.sql.exec("UPDATE users SET salt=?, pass_hash=? WHERE id=? AND role='owner'", data.salt, data.passHash, owner.id);
+      this.sql.exec("DELETE FROM sessions WHERE user_id=?", owner.id);
+      return json({ ok: true, message: "Owner-Passwort wurde zurückgesetzt. Bitte jetzt anmelden." });
     }
     if (path === "/get-user") {
       const user = one("SELECT id,name,salt,pass_hash AS passHash,role,created_at AS createdAt,banned FROM users WHERE name = ?", data.name);
