@@ -275,7 +275,9 @@ function connectChat() {
   const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
   const socket = new WebSocket(protocol + '//' + location.host + '/api/chat?channel=' + encodeURIComponent(selectedChannel) + '&token=' + encodeURIComponent(authToken));
   chatSocket = socket;
-  const presenceTimer = window.setInterval(() => { if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({type:"presence_ping"})); }, 30000);
+  const sendPresence = () => { if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({type:'presence_ping'})); };
+  socket.addEventListener('open', sendPresence);
+  const presenceTimer = window.setInterval(sendPresence, 30000);
   socket.addEventListener('message', event => {
     if (socket !== chatSocket) return;
     let data;
