@@ -100,3 +100,28 @@ footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-s
 .auth-tabs{position:relative;z-index:5;display:flex;width:100%;pointer-events:auto}
 .auth-tabs .auth-tab{position:relative;z-index:6;display:block;min-height:44px;flex:1;pointer-events:auto;touch-action:manipulation}
 .auth-tab:focus-visible{outline:3px solid #8bdc72;outline-offset:3px}
+
+/* FIX: Login-/Registrierungsformular bleibt auch bei kleinen Viewports erreichbar */
+#chatOverlay{min-height:0;overflow:hidden}
+.chat-shell{min-height:0;height:min(760px,calc(100dvh - 36px))}
+.chat-main{min-height:0;height:100%;overflow:hidden}
+.chat-login{min-height:0;align-items:start;justify-items:center;overflow-y:auto;overscroll-behavior:contain;padding:22px 18px 34px}
+.login-card{margin:auto;width:min(390px,100%);padding:4px 0 18px}
+#chatLoginForm{padding-bottom:8px}
+#chatLoginButton{display:block;width:100%;min-height:48px;position:relative;z-index:2}
+@media(max-width:480px){
+  #chatOverlay{padding:6px}
+  .chat-shell{height:calc(100dvh - 12px);max-height:calc(100dvh - 12px);border-radius:12px}
+  .chat-main{height:100%;min-height:0}
+  .chat-login{display:block;padding:16px 14px 28px}
+  .login-card{margin:0 auto;padding:0 0 24px}
+  .auth-tabs{position:sticky;top:0;z-index:4;background:#202225;padding:5px 0}
+  #chatLoginForm{gap:10px;margin-top:16px}
+  #chatLoginForm input{min-height:46px}
+  #chatLoginButton{margin-top:8px;min-height:50px}
+}
+@media(max-height:700px){
+  .chat-login{align-items:start;padding-top:12px;padding-bottom:24px}
+  .login-card{margin-top:0}
+}
+
