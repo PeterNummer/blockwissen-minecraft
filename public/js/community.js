@@ -2,7 +2,7 @@
   const hub=document.getElementById('communityHub'), hubBody=document.getElementById('communityHubBody');
   if(!hub||!hubBody)return;
   const token=()=>localStorage.getItem('tyqora_session')||sessionStorage.getItem('tyqora_session')||'';
-  let activeTab='notifications', selectedDm='', members=[], currentUserId='';
+  let activeTab='notifications', selectedDm='', members=[], currentUserId='', dmPollTimer=null;
   fetch('/api/me',{headers:{Authorization:'Bearer '+token()}}).then(r=>r.json()).then(d=>{currentUserId=d.user?.id||'';}).catch(()=>{});
   async function api(path,method='GET',body=null){
     const response=await fetch('/api/community/'+path,{method,headers:{Authorization:'Bearer '+token(),...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});
@@ -13,6 +13,17 @@
   const el=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;};
   function openHub(tab){activeTab=tab;hub.hidden=false;document.querySelectorAll('[data-hub-tab]').forEach(b=>b.classList.toggle('active',b.dataset.hubTab===tab));renderHub().catch(showError);}
   function showError(error){hubBody.replaceChildren(el('p','chat-feedback',error.message));}
+  async function refreshDmThread(){
+    if(hub.hidden||activeTab!=='dms'||!selectedDm)return;
+    try{
+      const data=await api('dm?with='+encodeURIComponent(selectedDm)),list=document.getElementById('dmThread');
+      if(!list)return;
+      const atBottom=list.scrollHeight-list.scrollTop-list.clientHeight<45;
+      list.replaceChildren();
+      data.messages.forEach(m=>{const bubble=el('div','dm-bubble'+(m.senderId===currentUserId?' mine':''),m.text);bubble.append(el('small','',new Date(m.createdAt).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})));list.append(bubble);});
+      if(atBottom)list.scrollTop=list.scrollHeight;
+    }catch{}
+  }
   async function renderHub(){
     hubBody.replaceChildren(el('p','','Lade …'));
     if(activeTab==='notifications'){
@@ -58,11 +69,13 @@
         hubBody.append(form);
       }
     }
+    if(dmPollTimer)window.clearInterval(dmPollTimer);
+    if(activeTab==='dms'&&selectedDm)dmPollTimer=window.setInterval(refreshDmThread,4000);
   }
   document.getElementById('openNotifications')?.addEventListener('click',()=>openHub('notifications'));
   document.getElementById('openDMs')?.addEventListener('click',()=>openHub('dms'));
-  document.getElementById('closeCommunity')?.addEventListener('click',()=>hub.hidden=true);
-  hub.addEventListener('click',e=>{if(e.target===hub)hub.hidden=true;});
+  document.getElementById('closeCommunity')?.addEventListener('click',()=>{hub.hidden=true;if(dmPollTimer)window.clearInterval(dmPollTimer);});
+  hub.addEventListener('click',e=>{if(e.target===hub){hub.hidden=true;if(dmPollTimer)window.clearInterval(dmPollTimer);}});
   document.querySelectorAll('[data-hub-tab]').forEach(b=>b.addEventListener('click',()=>openHub(b.dataset.hubTab)));
   async function refreshNotificationCount(){
     if(!token())return;
