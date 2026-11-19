@@ -324,7 +324,8 @@ function connectChat() {
           }
         } else {
           const nameItem = shopState.items.find(entry => entry.id === data.itemId && entry.type === 'name');
-          name.style.color = nameItem?.color || '';
+          name.classList.remove('cosmetic-name', ...Array.from(name.classList).filter(className => className.startsWith('cosmetic-name-')));
+          if (nameItem) name.classList.add('cosmetic-name', 'cosmetic-name-' + nameItem.id);
         }
       });
     }
@@ -377,7 +378,8 @@ async function loadShop() {
     const equipped = item.type === 'badge' ? data.equippedBadge === item.id : data.equippedItem === item.id;
     button.textContent = !owned ? 'Kaufen' : (equipped ? 'Ablegen' : 'Anlegen');
     button.classList.toggle('shop-action-unequip', owned && equipped);
-    button.classList.toggle('shop-action-equip', owned && !equipped);
+    button.classList.toggle('shop-action-equip', owned && !equipped && item.type !== 'name');
+    if (item.type === 'name') button.classList.add('cosmetic-shop-button', 'cosmetic-shop-button-' + item.id);
     button.disabled = false;
     button.addEventListener('click', async () => {
       button.disabled = true;
