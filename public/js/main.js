@@ -354,23 +354,29 @@ async function loadShop() {
     const price = document.createElement('strong'); price.className = 'shop-price'; price.textContent = '🪙 ' + item.price;
     const button = document.createElement('button'); button.type = 'button'; button.className = 'chat-primary shop-action';
     const owned = data.owned.includes(item.id);
-    button.textContent = owned ? (data.equippedItem === item.id ? 'Ausgerüstet' : 'Ausrüsten') : 'Kaufen';
-    button.disabled = data.equippedItem === item.id;
+    const equipped = data.equippedItem === item.id;
+    button.textContent = !owned ? 'Kaufen' : (equipped ? 'Ablegen' : 'Anlegen');
+    button.disabled = false;
     button.addEventListener('click', async () => {
       button.disabled = true;
       try {
-        if (owned) await api('/api/shop/equip', { itemId: item.id });
-        else await api('/api/shop/buy', { itemId: item.id });
+        if (!owned) {
+          await api('/api/shop/buy', { itemId: item.id });
+          document.getElementById('shopFeedback').textContent = item.name + ' gekauft!';
+        } else if (equipped) {
+          await api('/api/shop/equip', { itemId: '' });
+          document.getElementById('shopFeedback').textContent = 'Cosmetic abgelegt.';
+        } else {
+          await api('/api/shop/equip', { itemId: item.id });
+          document.getElementById('shopFeedback').textContent = 'Cosmetic angelegt!';
+        }
         await loadShop();
-        document.getElementById('shopFeedback').textContent = owned ? 'Cosmetic ausgerüstet!' : item.name + ' gekauft!';
-      } catch (error) { document.getElementById('shopFeedback').textContent = error.message; button.disabled = false; }
+      } catch (error) {
+        document.getElementById('shopFeedback').textContent = error.message;
+        button.disabled = false;
+      }
     });
     card.append(icon, title, description, price, button);
-    if (owned && data.equippedItem !== item.id) {
-      const unequip = document.createElement('button'); unequip.type = 'button'; unequip.className = 'shop-secondary'; unequip.textContent = 'Cosmetic ablegen';
-      unequip.addEventListener('click', async () => { try { await api('/api/shop/equip', { itemId: '' }); await loadShop(); } catch (error) { document.getElementById('shopFeedback').textContent = error.message; } });
-      card.append(unequip);
-    }
     container.append(card);
   });
 }
