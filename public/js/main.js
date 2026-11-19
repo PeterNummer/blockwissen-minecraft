@@ -110,10 +110,20 @@ document.addEventListener('click', event => {
 async function api(path, body, method = 'POST') {
   const headers = { 'Content-Type': 'application/json' };
   if (authToken) headers.Authorization = 'Bearer ' + authToken;
-  const response = await fetch(path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  let response;
+  try {
+    response = await fetch(path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  } catch (error) {
+    throw new Error('Server nicht erreichbar. Bitte prüfe deine Internetverbindung und lade die Seite neu.');
+  }
+  const raw = await response.text();
   let data = {};
-  try { data = await response.json(); } catch {}
-  if (!response.ok) throw new Error(data.error || 'Die Anfrage ist fehlgeschlagen.');
+  try { data = raw ? JSON.parse(raw) : {}; } catch {}
+  if (!response.ok) {
+    const fallback = raw && !raw.trim().startsWith('<') ? raw.slice(0, 180) : 'Der Server hat keine lesbare Fehlermeldung zurückgegeben.';
+    throw new Error(data.error || ('Serverfehler ' + response.status + ': ' + fallback));
+  }
+  if (raw && !Object.keys(data).length) throw new Error('Der Server hat eine ungültige Antwort gesendet.');
   return data;
 }
 function showAccount() {
