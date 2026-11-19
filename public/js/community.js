@@ -2,7 +2,8 @@
   const hub=document.getElementById('communityHub'), hubBody=document.getElementById('communityHubBody');
   if(!hub||!hubBody)return;
   const token=()=>localStorage.getItem('tyqora_session')||sessionStorage.getItem('tyqora_session')||'';
-  let activeTab='notifications', selectedDm='', dmTimer=null, members=[];
+  let activeTab='notifications', selectedDm='', members=[], currentUserId='';
+  fetch('/api/me',{headers:{Authorization:'Bearer '+token()}}).then(r=>r.json()).then(d=>{currentUserId=d.user?.id||'';}).catch(()=>{});
   async function api(path,method='GET',body=null){
     const response=await fetch('/api/community/'+path,{method,headers:{Authorization:'Bearer '+token(),...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});
     const data=await response.json().catch(()=>({}));
@@ -48,7 +49,7 @@
         const thread=await api('dm?with='+encodeURIComponent(selectedDm));
         hubBody.append(el('h4','',user?.name||thread.other.name));
         const messages=el('div','dm-thread');messages.id='dmThread';
-        thread.messages.forEach(m=>{const bubble=el('div','dm-bubble'+(m.senderId===window.tyqoraUserId?' mine':''),m.text);bubble.append(el('small','',new Date(m.createdAt).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})));messages.append(bubble);});
+        thread.messages.forEach(m=>{const bubble=el('div','dm-bubble'+(m.senderId===currentUserId?' mine':''),m.text);bubble.append(el('small','',new Date(m.createdAt).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})));messages.append(bubble);});
         hubBody.append(messages);
         const form=el('form','community-form');const input=el('input');input.placeholder='Private Nachricht …';input.maxLength=1000;input.required=true;
         const send=el('button','','Senden');send.type='submit';form.append(input,send);
