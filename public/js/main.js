@@ -354,4 +354,36 @@ async function restoreSession() {
   }
 }
 
+
+const resetAccountsForm = document.getElementById('resetAccountsForm');
+resetAccountsForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  const code = document.getElementById('resetRecoveryCode').value;
+  const confirmation = document.getElementById('resetConfirmText').value.trim();
+  if (confirmation !== 'ALLE ACCOUNTS LÖSCHEN') {
+    chatLoginFeedback.textContent = 'Die Bestätigung stimmt nicht überein.';
+    return;
+  }
+  if (!window.confirm('Wirklich alle Accounts einschließlich des Owner-Accounts endgültig löschen?')) return;
+  const button = document.getElementById('resetAccountsButton');
+  button.disabled = true;
+  button.textContent = 'Lösche Accounts …';
+  try {
+    const result = await api('/api/owner/reset-all', { recoveryCode: code });
+    if (chatSocket) chatSocket.close();
+    authToken = ''; chatUser = null; chatAuthenticated = false;
+    sessionStorage.removeItem('tyqora_session');
+    chatAccount.hidden = true;
+    adminPanel.hidden = true;
+    resetAccountsForm.reset();
+    chatLoginFeedback.textContent = result.message || 'Alle Accounts wurden gelöscht. Du kannst jetzt einen neuen Owner registrieren.';
+    setAuthMode('register');
+  } catch (error) {
+    chatLoginFeedback.textContent = error.message;
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Alle Accounts endgültig löschen';
+  }
+});
+
 restoreSession();
