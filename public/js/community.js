@@ -34,14 +34,14 @@
       const picker=el('form','community-form');
       const select=el('select');select.setAttribute('aria-label','Mitglied auswählen');
       select.append(new Option('Mitglied auswählen …',''));
-      members.forEach(user=>select.append(new Option(user.name,user.id)));
+      members.forEach(user=>select.append(new Option((user.isOnline?'🟢 ':'⚫ ')+user.name,user.id)));
       if(selectedDm)select.value=selectedDm;
       const open=el('button','','Öffnen');open.type='submit';picker.append(select,open);
       picker.addEventListener('submit',e=>{e.preventDefault();selectedDm=select.value;renderHub().catch(showError);});
       hubBody.append(picker);
       if(threadList.users?.length){
         const quick=el('div','community-list');
-        threadList.users.forEach(user=>{const b=el('button','community-entry',user.name);b.type='button';b.addEventListener('click',()=>{selectedDm=user.id;renderHub().catch(showError);});quick.append(b);});
+        threadList.users.forEach(user=>{const member=members.find(m=>m.id===user.id);const b=el('button','community-entry',(member?.isOnline?'🟢 ':'⚫ ')+user.name);b.type='button';b.addEventListener('click',()=>{selectedDm=user.id;renderHub().catch(showError);});quick.append(b);});
         hubBody.append(quick);
       }
       if(selectedDm){
