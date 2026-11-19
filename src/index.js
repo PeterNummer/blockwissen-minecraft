@@ -4,10 +4,10 @@ const CHANNELS = new Set(["welcome", "general", "minecraft"]);
 const SESSION_DAYS = 30;
 const encoder = new TextEncoder();
 const SHOP_ITEMS = [
-  { id: "mint_name", name: "Mint-Name", description: "Dein Name erscheint in frischem Mintgrün.", price: 120, type: "name", color: "#70e1b5", icon: "🌿" },
-  { id: "gold_name", name: "Gold-Name", description: "Ein goldener Name für deinen Chat-Auftritt.", price: 250, type: "name", color: "#ffd166", icon: "✨" },
+  { id: "mint_name", name: "Mint-Name", description: "Dein Name erscheint in frischem Mintgrün.", price: 50, type: "name", color: "#70e1b5", icon: "🌿" },
+  { id: "gold_name", name: "Gold-Name", description: "Ein goldener Name für deinen Chat-Auftritt.", price: 100, type: "name", color: "#ffd166", icon: "✨" },
   { id: "violet_name", name: "Violett-Name", description: "Ein auffälliger violetter Namensstil.", price: 250, type: "name", color: "#c4a1ff", icon: "💜" },
-  { id: "star_badge", name: "Stern-Badge", description: "Ein kleines Stern-Badge neben deinem Namen.", price: 400, type: "badge", badge: "✦", icon: "⭐" }
+  { id: "star_badge", name: "Stern-Badge", description: "Ein kleines Stern-Badge neben deinem Namen.", price: 180, type: "badge", badge: "✦", icon: "⭐" }
 ];
 
 function json(data, status = 200) {
