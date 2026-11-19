@@ -100,7 +100,12 @@ function setAuthMode(mode) {
   chatLoginButton.textContent = mode === 'register' ? 'Account erstellen' : 'Anmelden';
   chatLoginFeedback.textContent = '';
 }
-authTabs.forEach(tab => tab.addEventListener('click', () => setAuthMode(tab.dataset.authTab)));
+document.addEventListener('click', event => {
+  const tab = event.target.closest('[data-auth-tab]');
+  if (!tab) return;
+  event.preventDefault();
+  setAuthMode(tab.dataset.authTab);
+});
 
 async function api(path, body, method = 'POST') {
   const headers = { 'Content-Type': 'application/json' };
