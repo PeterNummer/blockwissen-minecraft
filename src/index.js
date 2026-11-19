@@ -7,7 +7,8 @@ const SHOP_ITEMS = [
   { id: "mint_name", name: "Mint-Name", description: "Dein Name erscheint in frischem Mintgrün.", price: 50, type: "name", color: "#70e1b5", icon: "🌿" },
   { id: "gold_name", name: "Gold-Name", description: "Ein goldener Name für deinen Chat-Auftritt.", price: 100, type: "name", color: "#ffd166", icon: "✨" },
   { id: "violet_name", name: "Violett-Name", description: "Ein auffälliger violetter Namensstil.", price: 250, type: "name", color: "#c4a1ff", icon: "💜" },
-  { id: "star_badge", name: "Stern-Badge", description: "Ein kleines Stern-Badge neben deinem Namen.", price: 180, type: "badge", badge: "✦", icon: "⭐" }
+  { id: "owner_red_name", name: "Owner-Rot", description: "Exklusiver roter Namensstil für den Owner.", price: 0, type: "name", color: "#ff5b65", icon: "🔴", ownerOnly: true },
+  { id: "star_badge", name: "Stern-Badge", description: "Ein Stern neben deinem Namen – auch zusammen mit einer Namensfarbe.", price: 180, type: "badge", badge: "⭐", icon: "⭐" }
 ];
 
 function json(data, status = 200) {
@@ -124,9 +125,10 @@ export default {
       }
       if (url.pathname === "/api/shop/equip" && request.method === "POST") {
         const data = await readBody(request);
-        const result = await storeCall(env, "/shop-equip", { userId: auth.user.id, itemId: data.itemId || "" });
+        const itemType = data.itemType === "badge" ? "badge" : "name";
+        const result = await storeCall(env, "/shop-equip", { userId: auth.user.id, itemId: data.itemId || "", itemType });
         if (result.ok) {
-          const update = { userId: auth.user.id, itemId: data.itemId || "" };
+          const update = { userId: auth.user.id, itemId: data.itemId || "", itemType };
           await Promise.all([...CHANNELS].map(channel => env.CHAT_ROOM.get(env.CHAT_ROOM.idFromName(channel)).fetch("https://chat.internal/cosmetic-update", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(update) })));
         }
         return result;
@@ -173,7 +175,7 @@ export default {
       const auth = await authResponse.json();
       if (!authResponse.ok || !auth.user) return new Response(auth.error || "Sitzung abgelaufen", { status: 401 });
       const headers = new Headers(request.headers);
-      headers.set("X-TYQORA-User", JSON.stringify({ id: auth.user.id, name: auth.user.name, role: auth.user.role, equippedItem: auth.user.equippedItem || "" }));
+      headers.set("X-TYQORA-User", JSON.stringify({ id: auth.user.id, name: auth.user.name, role: auth.user.role, equippedItem: auth.user.equippedItem || "", equippedBadge: auth.user.equippedBadge || "" }));
       const id = env.CHAT_ROOM.idFromName(channel);
       return env.CHAT_ROOM.get(id).fetch(new Request(request, { headers }));
     }
@@ -197,6 +199,7 @@ export class AuthStore extends DurableObject {
     this.sql.exec(`CREATE TABLE IF NOT EXISTS user_items (user_id TEXT NOT NULL, item_id TEXT NOT NULL, purchased_at INTEGER NOT NULL, PRIMARY KEY(user_id,item_id))`);
     try { this.sql.exec("ALTER TABLE users ADD COLUMN coins INTEGER NOT NULL DEFAULT 100"); } catch {}
     try { this.sql.exec("ALTER TABLE users ADD COLUMN equipped_item TEXT NOT NULL DEFAULT ''"); } catch {}
+    try { this.sql.exec("ALTER TABLE users ADD COLUMN equipped_badge TEXT NOT NULL DEFAULT ''"); } catch {}
   }
   async fetch(request) {
     const path = new URL(request.url).pathname;
@@ -229,26 +232,29 @@ export class AuthStore extends DurableObject {
       return json({ ok: true, user: { id: user.id, name: user.name, role: user.role, createdAt: user.createdAt } });
     }
     if (path === "/validate") {
-      const row = one("SELECT s.user_id,u.name,u.role,u.created_at AS createdAt,u.banned,u.coins,u.equipped_item AS equippedItem,s.expires_at AS expiresAt FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=?", data.tokenHash);
+      const row = one("SELECT s.user_id,u.name,u.role,u.created_at AS createdAt,u.banned,u.coins,u.equipped_item AS equippedItem,u.equipped_badge AS equippedBadge,s.expires_at AS expiresAt FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=?", data.tokenHash);
       if (!row || row.banned || row.expiresAt < Date.now()) {
         this.sql.exec("DELETE FROM sessions WHERE token_hash=?", data.tokenHash);
         return json({ error: "Sitzung ungültig oder Account gesperrt." }, 401);
       }
-      return json({ user: { id: row.user_id, name: row.name, role: row.role, createdAt: row.createdAt, coins: row.coins, equippedItem: row.equippedItem || "" } });
+      return json({ user: { id: row.user_id, name: row.name, role: row.role, createdAt: row.createdAt, coins: row.coins, equippedItem: row.equippedItem || "", equippedBadge: row.equippedBadge || "" } });
     }
     if (path === "/logout") { this.sql.exec("DELETE FROM sessions WHERE token_hash=?", data.tokenHash); return json({ ok: true }); }
     if (path === "/shop") {
-      const user = one("SELECT coins,equipped_item AS equippedItem FROM users WHERE id=?", data.userId);
+      const user = one("SELECT coins,role,equipped_item AS equippedItem,equipped_badge AS equippedBadge FROM users WHERE id=?", data.userId);
       if (!user) return json({ error: "Account nicht gefunden." }, 404);
       const owned = this.sql.exec("SELECT item_id AS id FROM user_items WHERE user_id=?", data.userId).toArray().map(item => item.id);
-      return json({ coins: user.coins, equippedItem: user.equippedItem || "", owned, items: SHOP_ITEMS });
+      if (user.role === "owner") owned.push("owner_red_name");
+      const items = SHOP_ITEMS.filter(item => !item.ownerOnly || user.role === "owner");
+      return json({ coins: user.coins, equippedItem: user.equippedItem || "", equippedBadge: user.equippedBadge || "", owned, items });
     }
     if (path === "/shop-buy") {
       const item = SHOP_ITEMS.find(entry => entry.id === data.itemId);
       if (!item) return json({ error: "Dieses Shop-Produkt gibt es nicht." }, 404);
-      if (one("SELECT item_id FROM user_items WHERE user_id=? AND item_id=?", data.userId, item.id)) return json({ error: "Diesen Artikel besitzt du bereits." }, 409);
-      const user = one("SELECT coins FROM users WHERE id=?", data.userId);
+      const user = one("SELECT coins,role FROM users WHERE id=?", data.userId);
       if (!user) return json({ error: "Account nicht gefunden." }, 404);
+      if (item.ownerOnly) return json({ error: "Dieses Cosmetic ist exklusiv für den Owner." }, 403);
+      if (one("SELECT item_id FROM user_items WHERE user_id=? AND item_id=?", data.userId, item.id)) return json({ error: "Diesen Artikel besitzt du bereits." }, 409);
       if (user.coins < item.price) return json({ error: "Du hast nicht genug TYQORA Coins." }, 400);
       this.sql.exec("UPDATE users SET coins=coins-? WHERE id=? AND coins>=?", item.price, data.userId, item.price);
       this.sql.exec("INSERT INTO user_items (user_id,item_id,purchased_at) VALUES (?,?,?)", data.userId, item.id, Date.now());
@@ -256,7 +262,17 @@ export class AuthStore extends DurableObject {
       return json({ ok: true, coins: balance.coins, purchased: item.id });
     }
     if (path === "/shop-equip") {
-      if (data.itemId && !one("SELECT item_id FROM user_items WHERE user_id=? AND item_id=?", data.userId, data.itemId)) return json({ error: "Diesen Artikel besitzt du nicht." }, 403);
+      const type = data.itemType === "badge" ? "badge" : "name";
+      const item = data.itemId ? SHOP_ITEMS.find(entry => entry.id === data.itemId && entry.type === type) : null;
+      if (data.itemId && !item) return json({ error: "Ungültiges Cosmetic." }, 400);
+      const user = one("SELECT role FROM users WHERE id=?", data.userId);
+      if (!user) return json({ error: "Account nicht gefunden." }, 404);
+      if (item?.ownerOnly && user.role !== "owner") return json({ error: "Dieses Cosmetic ist exklusiv für den Owner." }, 403);
+      if (data.itemId && !item?.ownerOnly && !one("SELECT item_id FROM user_items WHERE user_id=? AND item_id=?", data.userId, data.itemId)) return json({ error: "Diesen Artikel besitzt du nicht." }, 403);
+      if (type === "badge") {
+        this.sql.exec("UPDATE users SET equipped_badge=? WHERE id=?", data.itemId || "", data.userId);
+        return json({ ok: true, equippedBadge: data.itemId || "" });
+      }
       this.sql.exec("UPDATE users SET equipped_item=? WHERE id=?", data.itemId || "", data.userId);
       return json({ ok: true, equippedItem: data.itemId || "" });
     }
@@ -308,13 +324,17 @@ export class ChatRoom extends DurableObject {
     if (new URL(request.url).pathname === "/cosmetic-update" && request.method === "POST") {
       const update = await readBody(request);
       const history = await this.ctx.storage.get("history") || [];
-      for (const message of history) if (message.userId === update.userId) message.equippedItem = update.itemId || "";
+      for (const message of history) {
+        if (message.userId !== update.userId) continue;
+        if (update.itemType === "badge") message.equippedBadge = update.itemId || "";
+        else message.equippedItem = update.itemId || "";
+      }
       await this.ctx.storage.put("history", history);
       for (const socket of this.ctx.getWebSockets()) {
         const state = socket.deserializeAttachment() || {};
-        if (state.id === update.userId) socket.serializeAttachment({ ...state, equippedItem: update.itemId || "" });
+        if (state.id === update.userId) socket.serializeAttachment({ ...state, ...(update.itemType === "badge" ? { equippedBadge: update.itemId || "" } : { equippedItem: update.itemId || "" }) });
         if (state?.authenticated && socket.readyState === WebSocket.OPEN) {
-          try { socket.send(JSON.stringify({ type: "cosmetic_update", userId: update.userId, itemId: update.itemId || "" })); } catch {}
+          try { socket.send(JSON.stringify({ type: "cosmetic_update", userId: update.userId, itemId: update.itemId || "", itemType: update.itemType === "badge" ? "badge" : "name" })); } catch {}
         }
       }
       return json({ ok: true });
@@ -349,7 +369,7 @@ export class ChatRoom extends DurableObject {
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
     this.ctx.acceptWebSocket(server);
-    server.serializeAttachment({ authenticated: true, id: user.id, name: user.name, role: user.role, equippedItem: user.equippedItem || "", lastMessageAt: 0 });
+    server.serializeAttachment({ authenticated: true, id: user.id, name: user.name, role: user.role, equippedItem: user.equippedItem || "", equippedBadge: user.equippedBadge || "", lastMessageAt: 0 });
     const history = await this.ctx.storage.get("history") || [];
     server.send(JSON.stringify({ type: "history", messages: history }));
     return new Response(null, { status: 101, webSocket: client });
@@ -408,7 +428,7 @@ export class ChatRoom extends DurableObject {
       return;
     }
     ws.serializeAttachment({ ...attachment, lastMessageAt: now });
-    const message = { id: crypto.randomUUID(), userId: attachment.id, name: attachment.name, role: attachment.role, equippedItem: attachment.equippedItem || "", text, time: now };
+    const message = { id: crypto.randomUUID(), userId: attachment.id, name: attachment.name, role: attachment.role, equippedItem: attachment.equippedItem || "", equippedBadge: attachment.equippedBadge || "", text, time: now };
     history.push(message);
     await this.ctx.storage.put("history", history.slice(-100));
     broadcast({ type: "message", message });
