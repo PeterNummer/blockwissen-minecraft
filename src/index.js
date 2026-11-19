@@ -262,10 +262,9 @@ export class ChatRoom extends DurableObject {
         const state = socket.deserializeAttachment() || {};
         if (state.id === update.userId) {
           socket.serializeAttachment({ ...state, role: update.role });
-          try { socket.send(JSON.stringify({ type: "role_update", userId: update.userId, role: update.role })); } catch {}
         }
         if (state?.authenticated && socket.readyState === WebSocket.OPEN) {
-          try { socket.send(JSON.stringify({ type: "message_role_update", userId: update.userId, role: update.role })); } catch {}
+          try { socket.send(JSON.stringify({ type: "role_update", userId: update.userId, role: update.role })); } catch {}
         }
       }
       return json({ ok: true });
