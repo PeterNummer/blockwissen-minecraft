@@ -37,23 +37,35 @@
       <button class="channel active" data-channel="welcome"># willkommen</button>
       <button class="channel" data-channel="general"># allgemein</button>
       <button class="channel" data-channel="minecraft"># minecraft</button>
-      <div class="chat-side-bottom"><span class="connection-dot" id="connectionDot"></span><span id="connectionLabel">Nicht verbunden</span></div>
+      <div class="chat-side-bottom"><span class="connection-dot" id="connectionDot"></span><span id="connectionLabel">Nicht verbunden</span></div><div class="chat-account" id="chatAccount" hidden><strong id="accountName"></strong><span id="accountRole"></span><button type="button" id="openAdmin" hidden>⚙ Einstellungen</button><button type="button" id="chatLogout">Abmelden</button></div>
     </aside>
     <section class="chat-main">
       <div class="chat-top"><span id="activeChannel"># willkommen</span><button class="close" id="closeChat">Schließen&nbsp; ✕</button></div>
       <div class="chat-login" id="chatLogin">
         <div class="login-card">
           <div class="welcome-icon">💬</div><h2>Willkommen bei TYQORA</h2>
-          <p>Gib deinen Anzeigenamen und den Zugangscode ein, um den Chat zu betreten.</p>
-          <p class="chat-privacy-hint">Alle Mitglieder dieses Kanals können deine Nachrichten lesen. Teile hier keine persönlichen Daten und nutze nur einen Anzeigenamen.</p>
+          <p>Melde dich an oder erstelle mit einem Einladungscode einen Account.</p>
+          <div class="auth-tabs"><button type="button" class="auth-tab active" data-auth-tab="login">Anmelden</button><button type="button" class="auth-tab" data-auth-tab="register">Registrieren</button></div>
           <form id="chatLoginForm">
-            <label for="chatName">Anzeigename</label><input id="chatName" maxlength="24" minlength="2" autocomplete="nickname" required placeholder="Dein Name">
-            <label for="chatCode">Zugangscode</label><input id="chatCode" type="password" autocomplete="off" required placeholder="Zugangscode">
-            <button class="chat-primary" type="submit" id="chatLoginButton">Chat betreten</button>
+            <label for="chatName">Benutzername</label><input id="chatName" maxlength="24" minlength="3" autocomplete="username" required placeholder="Dein Benutzername">
+            <label for="chatPassword">Passwort</label><input id="chatPassword" type="password" minlength="8" maxlength="128" autocomplete="current-password" required placeholder="Mindestens 8 Zeichen">
+            <div id="registerFields" hidden>
+              <label for="chatInviteCode">Einladungscode</label><input id="chatInviteCode" type="password" autocomplete="off" placeholder="Registrierungscode">
+              <label for="chatOwnerCode">Owner-Code (nur für den ersten Owner)</label><input id="chatOwnerCode" type="password" autocomplete="off" placeholder="Optional">
+            </div>
+            <button class="chat-primary" type="submit" id="chatLoginButton">Anmelden</button>
           </form>
           <p class="chat-feedback" id="chatLoginFeedback" role="status"></p>
+          <p class="chat-privacy-hint">Verwende keine persönlichen Daten als Benutzernamen oder in Chatnachrichten.</p>
         </div>
       </div>
+      <section class="admin-panel" id="adminPanel" hidden>
+        <div class="admin-heading"><div><span class="admin-kicker">TYQORA CONTROL</span><h2>Benutzerverwaltung</h2><p>Owner-Dashboard · Nur für deinen Owner-Account</p></div><button class="close" id="adminRefresh" type="button">Aktualisieren</button></div>
+        <div class="admin-stats"><div><strong id="userCount">0</strong><span>Registrierte Accounts</span></div><div><strong id="ownerCount">0</strong><span>Owner</span></div></div>
+        <input id="userSearch" class="admin-search" type="search" placeholder="Benutzer suchen …" aria-label="Benutzer suchen">
+        <div class="user-list" id="userList"></div>
+        <p class="chat-feedback" id="adminFeedback" role="status"></p>
+      </section>
       <div class="chat-room" id="chatRoom" hidden>
         <div class="chat-messages" id="chatMessages" aria-live="polite"></div>
         <form class="chat-composer" id="chatMessageForm">
