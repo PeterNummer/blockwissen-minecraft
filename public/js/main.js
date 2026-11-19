@@ -34,3 +34,145 @@ document.addEventListener('keydown',event=>{
  if(event.ctrlKey&&event.shiftKey&&event.key.toLowerCase()==='k'){event.preventDefault();if(guideModal.classList.contains('open'))closeGuide();overlay.classList.contains('open')?closeChat():openChat()}
  if(event.key==='Escape'){if(guideModal.classList.contains('open'))closeGuide();if(overlay.classList.contains('open'))closeChat()}
 });
+
+
+// TYQORA CHAT – echte Echtzeitverbindung über Cloudflare Durable Objects
+const chatLogin = document.getElementById('chatLogin');
+const chatRoom = document.getElementById('chatRoom');
+const chatLoginForm = document.getElementById('chatLoginForm');
+const chatLoginFeedback = document.getElementById('chatLoginFeedback');
+const chatMessages = document.getElementById('chatMessages');
+const chatMessageForm = document.getElementById('chatMessageForm');
+const chatMessageInput = document.getElementById('chatMessageInput');
+const chatNameInput = document.getElementById('chatName');
+const chatCodeInput = document.getElementById('chatCode');
+const chatLoginButton = document.getElementById('chatLoginButton');
+const connectionDot = document.getElementById('connectionDot');
+const connectionLabel = document.getElementById('connectionLabel');
+const activeChannel = document.getElementById('activeChannel');
+const channelButtons = document.querySelectorAll('[data-channel]');
+let chatSocket = null;
+let chatIdentity = null;
+let selectedChannel = 'welcome';
+let chatAuthenticated = false;
+
+function setChatConnection(state, label) {
+  connectionDot.className = 'connection-dot ' + state;
+  connectionLabel.textContent = label;
+}
+function showChatLogin(message = '') {
+  chatLogin.hidden = false;
+  chatRoom.hidden = true;
+  chatLoginFeedback.textContent = message;
+  chatLoginButton.disabled = false;
+  chatLoginButton.textContent = 'Chat betreten';
+}
+function renderChatMessage(message) {
+  const row = document.createElement('article');
+  row.className = 'chat-message';
+  const meta = document.createElement('div');
+  meta.className = 'chat-message-meta';
+  const name = document.createElement('strong');
+  name.textContent = message.name || 'Gast';
+  const time = document.createElement('time');
+  time.dateTime = new Date(message.time).toISOString();
+  time.textContent = new Date(message.time).toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
+  const body = document.createElement('p');
+  body.textContent = message.text || '';
+  meta.append(name, time);
+  row.append(meta, body);
+  chatMessages.append(row);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+function connectChat() {
+  if (!chatIdentity) return;
+  if (chatSocket) chatSocket.close();
+  chatAuthenticated = false;
+  chatMessages.replaceChildren();
+  setChatConnection('connecting', 'Verbinde …');
+  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const socket = new WebSocket(protocol + '//' + location.host + '/api/chat?channel=' + encodeURIComponent(selectedChannel));
+  chatSocket = socket;
+  socket.addEventListener('open', () => {
+    socket.send(JSON.stringify({type:'auth', name:chatIdentity.name, code:chatIdentity.code}));
+  });
+  socket.addEventListener('message', event => {
+    if (socket !== chatSocket) return;
+    let data;
+    try { data = JSON.parse(event.data); } catch { return; }
+    if (data.type === 'error') {
+      showChatLogin(data.message || 'Verbindung fehlgeschlagen.');
+      setChatConnection('offline', 'Nicht verbunden');
+      chatIdentity = null;
+      socket.close();
+    } else if (data.type === 'history') {
+      chatAuthenticated = true;
+      chatLogin.hidden = true;
+      chatRoom.hidden = false;
+      setChatConnection('online', 'Verbunden');
+      (Array.isArray(data.messages) ? data.messages : []).forEach(renderChatMessage);
+      chatMessageInput.focus();
+    } else if (data.type === 'message' && data.message) {
+      renderChatMessage(data.message);
+    } else if (data.type === 'status') {
+      setChatConnection('online', data.message || 'Verbunden');
+    }
+  });
+  socket.addEventListener('close', () => {
+    if (socket !== chatSocket) return;
+    chatAuthenticated = false;
+    setChatConnection('offline', 'Nicht verbunden');
+    if (chatIdentity && overlay.classList.contains('open')) {
+      showChatLogin('Die Verbindung wurde getrennt. Bitte erneut anmelden.');
+      chatIdentity = null;
+    }
+  });
+  socket.addEventListener('error', () => {
+    if (socket !== chatSocket) return;
+    setChatConnection('offline', 'Verbindungsfehler');
+    showChatLogin('Der Chatserver ist nicht erreichbar. Bitte später erneut versuchen.');
+  });
+}
+chatLoginForm.addEventListener('submit', event => {
+  event.preventDefault();
+  const name = chatNameInput.value.trim();
+  const code = chatCodeInput.value;
+  if (name.length < 2 || !code) {
+    showChatLogin('Bitte Anzeigename und Zugangscode eingeben.');
+    return;
+  }
+  chatIdentity = {name, code};
+  chatLoginButton.disabled = true;
+  chatLoginButton.textContent = 'Verbinde …';
+  chatLoginFeedback.textContent = '';
+  connectChat();
+});
+chatMessageForm.addEventListener('submit', event => {
+  event.preventDefault();
+  const text = chatMessageInput.value.trim();
+  if (!text || !chatAuthenticated || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+  chatSocket.send(JSON.stringify({type:'message', text}));
+  chatMessageInput.value = '';
+  chatMessageInput.focus();
+});
+channelButtons.forEach(button => button.addEventListener('click', () => {
+  if (selectedChannel === button.dataset.channel) return;
+  selectedChannel = button.dataset.channel;
+  channelButtons.forEach(item => item.classList.toggle('active', item === button));
+  activeChannel.textContent = '# ' + selectedChannel;
+  chatMessageInput.placeholder = 'Nachricht an # ' + selectedChannel;
+  if (chatIdentity) connectChat();
+}));
+const originalCloseChat = closeChat;
+closeChat = function() {
+  if (chatSocket) {
+    const socket = chatSocket;
+    chatSocket = null;
+    socket.close();
+  }
+  chatIdentity = null;
+  chatAuthenticated = false;
+  showChatLogin();
+  setChatConnection('offline', 'Nicht verbunden');
+  originalCloseChat();
+};
