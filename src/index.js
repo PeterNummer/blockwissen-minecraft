@@ -180,6 +180,7 @@ export default {
       if (action === "notifications/read" && request.method === "POST") return storeCall(env, "/community/notifications-read", payload);
       if (action === "dm" && request.method === "GET") { payload.otherId = url.searchParams.get("with") || ""; return storeCall(env, "/community/dm-list", payload); }
       if (action === "dm" && request.method === "POST") return storeCall(env, "/community/dm-send", payload);
+      if (action === "reactions" && request.method === "GET") { payload.messageId = url.searchParams.get("messageId") || ""; return storeCall(env, "/community/reactions-get", payload); }
       if (action === "react" && request.method === "POST") return storeCall(env, "/community/react", payload);
       if (action === "xp" && request.method === "POST") return storeCall(env, "/community/xp", payload);
 
@@ -321,6 +322,15 @@ export class AuthStore extends DurableObject {
       this.sql.exec("INSERT INTO profiles (user_id,bio,avatar_url,updated_at) VALUES (?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET bio=excluded.bio,avatar_url=excluded.avatar_url,updated_at=excluded.updated_at", data.userId, bio, avatarUrl, Date.now());
       return json({ ok: true });
     }
+    if (path === "/community/reactions-get") {
+      if (!data.messageId) return json({ reactions: [] });
+      return json({ reactions: this.sql.exec("SELECT emoji,COUNT(*) AS count FROM message_reactions WHERE message_id=? GROUP BY emoji", data.messageId).toArray() });
+    }
+    if (path === "/notify-mention") {
+      const target = one("SELECT id FROM users WHERE name=? COLLATE NOCASE AND banned=0", data.name);
+      if (target && target.id !== data.senderId) this.sql.exec("INSERT INTO notifications (id,user_id,kind,text,created_at) VALUES (?,?,?,?,?)", crypto.randomUUID(), target.id, "mention", "Du wurdest im Chat erwähnt.", Date.now());
+      return json({ ok: true });
+    }
     if (path === "/community/members") {
       const users = this.sql.exec("SELECT id,name,role FROM users WHERE banned=0 AND id<>? ORDER BY name COLLATE NOCASE LIMIT 100", data.userId).toArray();
       return json({ users });
@@ -414,6 +424,7 @@ export class AuthStore extends DurableObject {
 }
 
 export class ChatRoom extends DurableObject {
+  constructor(ctx, env) { super(ctx, env); this.env = env; }
   async fetch(request) {
     if (new URL(request.url).pathname === "/cosmetic-update" && request.method === "POST") {
       const update = await readBody(request);
@@ -526,6 +537,18 @@ export class ChatRoom extends DurableObject {
     history.push(message);
     await this.ctx.storage.put("history", history.slice(-100));
     broadcast({ type: "message", message });
+    const mentionNames = [...text.matchAll(/@([\\p{L}\\p{N}_-]{3,24})/gu)].map(match => match[1]);
+    if (mentionNames.length) {
+      const authId = this.env.AUTH_STORE.idFromName("tyqora-auth");
+      await Promise.all(mentionNames.map(name => this.env.AUTH_STORE.get(authId).fetch("https://auth.internal/notify-mention", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, senderId: attachment.id })
+      })));
+    }
+    const authId = this.env.AUTH_STORE.idFromName("tyqora-auth");
+    await this.env.AUTH_STORE.get(authId).fetch("https://auth.internal/community/xp", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: attachment.id })
+    });
+
   }
   async webSocketClose(ws, code, reason) {
     try { ws.close(code, reason); } catch { try { ws.close(); } catch {} }
