@@ -249,11 +249,23 @@ export class ChatRoom extends DurableObject {
     if (new URL(request.url).pathname === "/role-update" && request.method === "POST") {
       const update = await readBody(request);
       if (!update.userId || !["owner","admin","moderator","member"].includes(update.role)) return json({ error: "Ungültiges Rollenupdate." }, 400);
+      const history = await this.ctx.storage.get("history") || [];
+      let historyChanged = false;
+      for (const message of history) {
+        if (message.userId === update.userId && message.role !== update.role) {
+          message.role = update.role;
+          historyChanged = true;
+        }
+      }
+      if (historyChanged) await this.ctx.storage.put("history", history);
       for (const socket of this.ctx.getWebSockets()) {
         const state = socket.deserializeAttachment() || {};
         if (state.id === update.userId) {
           socket.serializeAttachment({ ...state, role: update.role });
           try { socket.send(JSON.stringify({ type: "role_update", userId: update.userId, role: update.role })); } catch {}
+        }
+        if (state?.authenticated && socket.readyState === WebSocket.OPEN) {
+          try { socket.send(JSON.stringify({ type: "message_role_update", userId: update.userId, role: update.role })); } catch {}
         }
       }
       return json({ ok: true });
