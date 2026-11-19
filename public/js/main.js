@@ -304,6 +304,25 @@ openAdminButton.addEventListener('click', async () => {
   catch (error) { document.getElementById('adminFeedback').textContent = error.message; }
 });
 document.getElementById('adminRefresh').addEventListener('click', loadAdminUsers);
+document.getElementById('deleteAllAccounts').addEventListener('click', async () => {
+  if (!confirm('Wirklich ALLE Accounts einschließlich des Owner-Accounts dauerhaft löschen? Diese Aktion kann nicht rückgängig gemacht werden.')) return;
+  const confirmation = prompt('Gib zum Bestätigen ALLE ACCOUNTS LÖSCHEN ein:');
+  if (confirmation !== 'ALLE ACCOUNTS LÖSCHEN') return;
+  const button = document.getElementById('deleteAllAccounts');
+  button.disabled = true;
+  try {
+    await api('/api/admin/reset-all', {});
+    if (chatSocket) chatSocket.close();
+    authToken = ''; chatUser = null; chatAuthenticated = false;
+    sessionStorage.removeItem('tyqora_session');
+    chatAccount.hidden = true;
+    adminPanel.hidden = true;
+    showChatLogin('Alle Accounts wurden gelöscht. Der Owner kann sich jetzt neu registrieren.');
+    setChatConnection('offline', 'Nicht verbunden');
+  } catch (error) {
+    document.getElementById('adminFeedback').textContent = error.message;
+  } finally { button.disabled = false; }
+});
 userSearch.addEventListener('input', () => loadAdminUsers().catch(() => {}));
 document.getElementById('chatLogout').addEventListener('click', async () => {
   try { await api('/api/logout', {}); } catch {}
