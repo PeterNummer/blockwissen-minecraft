@@ -113,7 +113,13 @@ function connectChat() {
     if (socket !== chatSocket) return;
     let data;
     try { data = JSON.parse(event.data); } catch { return; }
-    if (data.type === 'error') {
+    if (data.type === 'notice') {
+      const note = document.createElement('div');
+      note.className = 'chat-system-note';
+      note.textContent = data.message || 'Hinweis';
+      chatMessages.append(note);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    } else if (data.type === 'error') {
       showChatLogin(data.message || 'Verbindung fehlgeschlagen.');
       setChatConnection('offline', 'Nicht verbunden');
       chatIdentity = null;
