@@ -164,6 +164,22 @@ export default {
       }
     }
 
+    if (url.pathname.startsWith("/api/community/")) {
+      const token = (request.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
+      if (!token) return json({ error: "Nicht angemeldet." }, 401);
+      const tokenHash = await hashText(token);
+      const authResponse = await storeCall(env, "/validate", { tokenHash });
+      const auth = await authResponse.json();
+      if (!authResponse.ok || !auth.user) return json({ error: "Sitzung abgelaufen." }, 401);
+      const data = request.method === "POST" ? await readBody(request) : {};
+      const action = url.pathname.slice("/api/community/".length);
+      const payload = { ...data, userId: auth.user.id };
+      if (action === "profile" && request.method === "GET") payload.targetId = url.searchParams.get("id") || auth.user.id;
+      if (action === "profile" && request.method === "GET") return storeCall(env, "/community/profile-get", payload);
+      if (action === "profile" && request.method === "POST") return storeCall(env, "/community/profile-save", payload);
+      return json({ error: "Unbekannte Community-Aktion." }, 404);
+    }
+
     if (url.pathname === "/api/chat") {
       const channel = url.searchParams.get("channel") || "welcome";
       if (!CHANNELS.has(channel)) return new Response("Unbekannter Kanal", { status: 404 });
@@ -201,6 +217,8 @@ export class AuthStore extends DurableObject {
     try { this.sql.exec("ALTER TABLE users ADD COLUMN equipped_item TEXT NOT NULL DEFAULT ''"); } catch {}
     try { this.sql.exec("ALTER TABLE users ADD COLUMN equipped_badge TEXT NOT NULL DEFAULT ''"); } catch {}
     this.sql.exec("UPDATE users SET equipped_badge=equipped_item,equipped_item='' WHERE equipped_item='star_badge' AND equipped_badge=''");
+    this.sql.exec("CREATE TABLE IF NOT EXISTS profiles (user_id TEXT PRIMARY KEY, bio TEXT NOT NULL DEFAULT '', avatar_url TEXT NOT NULL DEFAULT '', updated_at INTEGER NOT NULL)");
+
   }
   async fetch(request) {
     const path = new URL(request.url).pathname;
@@ -275,6 +293,20 @@ export class AuthStore extends DurableObject {
       }
       this.sql.exec("UPDATE users SET equipped_item=? WHERE id=?", data.itemId || "", data.userId);
       return json({ ok: true, equippedItem: data.itemId || "" });
+    }
+    if (path === "/community/profile-get") {
+      const targetId = data.targetId || data.userId;
+      const profile = one("SELECT bio,avatar_url AS avatarUrl,updated_at AS updatedAt FROM profiles WHERE user_id=?", targetId) || { bio: "", avatarUrl: "", updatedAt: 0 };
+      const user = one("SELECT id,name,role,created_at AS createdAt,equipped_item AS equippedItem,equipped_badge AS equippedBadge FROM users WHERE id=?", targetId);
+      if (!user) return json({ error: "Mitglied nicht gefunden." }, 404);
+      return json({ profile: { ...user, ...profile }, own: targetId === data.userId });
+    }
+    if (path === "/community/profile-save") {
+      const bio = typeof data.bio === "string" ? data.bio.trim().slice(0, 240) : "";
+      const avatarUrl = typeof data.avatarUrl === "string" ? data.avatarUrl.trim().slice(0, 500) : "";
+      if (avatarUrl && !/^https:\/\//i.test(avatarUrl)) return json({ error: "Profilbild muss eine HTTPS-Adresse sein." }, 400);
+      this.sql.exec("INSERT INTO profiles (user_id,bio,avatar_url,updated_at) VALUES (?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET bio=excluded.bio,avatar_url=excluded.avatar_url,updated_at=excluded.updated_at", data.userId, bio, avatarUrl, Date.now());
+      return json({ ok: true });
     }
     if (path === "/users") {
       const users = this.sql.exec("SELECT id,name,role,created_at AS createdAt,banned,coins FROM users ORDER BY created_at DESC").toArray();
