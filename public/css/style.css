@@ -276,3 +276,24 @@ footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-s
   .chat-top-actions{gap:6px}
   .chat-refresh{min-height:32px;padding:6px 9px;font-size:.74rem}
 }
+
+/* TYQORA Coin-Shop */
+.coin-balance{display:inline-flex;align-items:center;justify-content:center;padding:7px 9px;border:1px solid #75602c;border-radius:8px;background:#3a301b;color:#ffdc83;font-weight:850;font-size:.78rem}
+.chat-account #openShop{border-color:#75602c;color:#ffdc83}
+.shop-panel{flex:1;min-height:0;overflow:auto;padding:26px}
+.shop-panel[hidden]{display:none}
+.shop-heading{display:flex;align-items:center;justify-content:space-between;gap:18px}
+.shop-heading h2{margin:5px 0;font-size:1.9rem}
+.shop-heading p{margin:0;color:#aeb2bb}
+.shop-balance{padding:10px 14px;border:1px solid #75602c;border-radius:12px;background:#3a301b;color:#ffdc83;font-weight:900}
+.shop-toolbar{display:flex;gap:9px;margin:22px 0}
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+.shop-item{display:flex;flex-direction:column;align-items:flex-start;gap:9px;padding:18px;border:1px solid #3c4655;border-radius:14px;background:linear-gradient(145deg,#292f3a,#20252d)}
+.shop-item-icon{font-size:2rem}
+.shop-item h3{margin:0}
+.shop-item p{margin:0;color:#aeb6c4;font-size:.88rem;min-height:44px}
+.shop-price{color:#ffdc83}
+.shop-action{width:100%;margin-top:5px}
+.shop-secondary{width:100%;padding:9px;border:1px solid #4b5666;border-radius:8px;background:#252d39;color:#dce5f2;cursor:pointer}
+.cosmetic-badge{display:inline-flex;align-items:center;justify-content:center;margin-left:5px;color:#ffdc83;font-weight:900}
+@media(max-width:600px){.shop-panel{padding:15px}.shop-heading{align-items:flex-start;flex-direction:column}.shop-toolbar{flex-wrap:wrap}.coin-balance{font-size:.72rem}}
