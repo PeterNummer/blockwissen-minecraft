@@ -91,6 +91,7 @@ export default {
         if (url.pathname === "/api/admin/role" && request.method === "POST") return storeCall(env, "/role", data);
         if (url.pathname === "/api/admin/ban" && request.method === "POST") return storeCall(env, "/ban", data);
         if (url.pathname === "/api/admin/delete" && request.method === "POST") return storeCall(env, "/delete", data);
+        if (url.pathname === "/api/admin/reset-all" && request.method === "POST") return storeCall(env, "/reset-all", {});
       }
     }
 
@@ -176,6 +177,11 @@ export class AuthStore extends DurableObject {
       this.sql.exec("UPDATE users SET banned=? WHERE id=?", data.banned ? 1 : 0, data.userId);
       if (data.banned) this.sql.exec("DELETE FROM sessions WHERE user_id=?", data.userId);
       return json({ ok: true });
+    }
+    if (path === "/reset-all") {
+      this.sql.exec("DELETE FROM sessions");
+      this.sql.exec("DELETE FROM users");
+      return json({ ok: true, message: "Alle Accounts und Sitzungen wurden gelöscht." });
     }
     if (path === "/delete") {
       const target = one("SELECT role FROM users WHERE id=?", data.userId);
