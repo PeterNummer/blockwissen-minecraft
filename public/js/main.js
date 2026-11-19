@@ -365,6 +365,7 @@ async function loadShop() {
   const container = document.getElementById('shopItems');
   container.replaceChildren();
   data.items.forEach(item => {
+    if (item.ownerOnly && chatUser?.role !== 'owner') return;
     const card = document.createElement('article'); card.className = 'shop-item';
     const icon = document.createElement('div'); icon.className = 'shop-item-icon'; icon.textContent = item.icon;
     const title = document.createElement('h3'); title.textContent = item.name;
@@ -509,7 +510,7 @@ chatLoginForm.addEventListener('submit', async event => {
       localStorage.setItem('tyqora_session', authToken);
       chatUser = result.user;
       showAccount();
-      loadShop().catch(() => {});
+      await loadShop().catch(() => {});
       connectChat();
     }
   } catch (error) {
@@ -583,7 +584,7 @@ async function restoreSession() {
     const result = await api('/api/me', null, 'GET');
     chatUser = result.user;
     showAccount();
-    loadShop().catch(() => {});
+    await loadShop().catch(() => {});
     connectChat();
   } catch {
     authToken = '';
