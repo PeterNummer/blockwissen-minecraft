@@ -78,7 +78,7 @@ export class ChatRoom extends DurableObject {
 
     const now = Date.now();
     if (attachment.lastMessageAt && now - attachment.lastMessageAt < 700) {
-      ws.send(JSON.stringify({ type: "error", message: "Bitte warte kurz vor der nächsten Nachricht." }));
+      ws.send(JSON.stringify({ type: "notice", message: "Bitte warte kurz vor der nächsten Nachricht." }));
       return;
     }
     ws.serializeAttachment({ ...attachment, lastMessageAt: now });
