@@ -26,3 +26,35 @@ footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-s
 .guide-callout{background:#243726;border:1px solid #496348;border-radius:12px;padding:14px;margin-top:18px;color:#dcebd7}
 .guide-dialog .guide-subtitle{color:var(--lime);font-weight:800;margin:20px 0 8px}
 @media(max-width:480px){.guide-dialog{padding:20px}.edition.guide-card::after{font-size:.72rem}}
+
+
+/* TYQORA CHAT – Anmeldung und Echtzeit-Chat */
+.chat-side{display:flex;flex-direction:column}
+.channel{display:block;width:100%;border:0;background:transparent;text-align:left;font:inherit;cursor:pointer}
+.channel:hover{background:#292c31}
+.chat-side-bottom{margin-top:auto;padding:12px 10px 4px;color:#aeb2bb;font-size:.78rem;display:flex;align-items:center;gap:8px}
+.connection-dot{width:8px;height:8px;border-radius:50%;background:#777}
+.connection-dot.online{background:#6cdb85;box-shadow:0 0 10px #6cdb85}
+.connection-dot.connecting{background:#e8c76b}
+.connection-dot.offline{background:#e17878}
+.chat-login{flex:1;display:grid;place-items:center;padding:24px;overflow:auto}
+.login-card{width:min(390px,100%);text-align:center}
+.login-card h2{margin:8px 0}
+.login-card>p{color:#b5b8c0}
+#chatLoginForm{display:grid;gap:9px;text-align:left;margin-top:22px}
+#chatLoginForm label{font-size:.82rem;color:#c9cbd0;font-weight:700}
+#chatLoginForm input,.chat-composer input{width:100%;min-width:0;border:1px solid #484b53;background:#17191d;color:#f4f5f7;border-radius:9px;padding:12px 13px;font:inherit;outline:none}
+#chatLoginForm input:focus,.chat-composer input:focus{border-color:#8bdc72;box-shadow:0 0 0 3px #8bdc7220}
+.chat-primary{border:0;border-radius:9px;background:#8bdc72;color:#142013;font:inherit;font-weight:800;padding:11px 16px;cursor:pointer}
+.chat-primary:disabled{opacity:.6;cursor:wait}
+.chat-feedback{min-height:1.4em;color:#ffaaaa;font-size:.85rem}
+.chat-room{flex:1;min-height:0;display:flex;flex-direction:column}
+.chat-room[hidden],.chat-login[hidden]{display:none}
+.chat-messages{flex:1;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:16px}
+.chat-message{max-width:760px}
+.chat-message-meta{display:flex;align-items:baseline;gap:10px}
+.chat-message-meta strong{color:#a9e994}
+.chat-message-meta time{color:#888e99;font-size:.72rem}
+.chat-message p{margin:3px 0 0;color:#eceef2;white-space:pre-wrap;overflow-wrap:anywhere}
+.chat-composer{display:flex;gap:10px;padding:15px 18px;border-top:1px solid #393b40}
+@media(max-width:480px){.chat-login{padding:15px}.chat-messages{padding:14px}.chat-composer{padding:10px}.chat-composer .chat-primary{padding:10px}}
