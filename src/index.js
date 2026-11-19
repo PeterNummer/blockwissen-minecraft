@@ -80,6 +80,14 @@ export default {
       }
     }
 
+    if (url.pathname === "/api/owner/reset-all" && request.method === "POST") {
+      const data = await readBody(request);
+      if (!env.OWNER_RECOVERY_CODE || data.recoveryCode !== env.OWNER_RECOVERY_CODE) return json({ error: "Wiederherstellungscode ungültig oder nicht eingerichtet." }, 403);
+      const result = await storeCall(env, "/reset-all", {});
+      const body = await result.text();
+      return new Response(body, { status: result.status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
+    }
+
     if (url.pathname === "/api/login" && request.method === "POST") {
       const data = await readBody(request);
       if (!validName(data.name) || !validPassword(data.password)) return json({ error: "Benutzername oder Passwort ist ungültig." }, 400);
