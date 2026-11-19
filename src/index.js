@@ -231,6 +231,7 @@ export class AuthStore extends DurableObject {
     this.sql.exec("CREATE TABLE IF NOT EXISTS message_reactions (message_id TEXT NOT NULL, user_id TEXT NOT NULL, emoji TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY(message_id,user_id,emoji))");
     this.sql.exec("CREATE TABLE IF NOT EXISTS notifications (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, kind TEXT NOT NULL, text TEXT NOT NULL, created_at INTEGER NOT NULL, read_at INTEGER NOT NULL DEFAULT 0)");
     this.sql.exec("CREATE TABLE IF NOT EXISTS user_stats (user_id TEXT PRIMARY KEY, xp INTEGER NOT NULL DEFAULT 0, level INTEGER NOT NULL DEFAULT 1, last_xp_at INTEGER NOT NULL DEFAULT 0)");
+    this.sql.exec("CREATE TABLE IF NOT EXISTS user_presence (user_id TEXT PRIMARY KEY, last_seen INTEGER NOT NULL)");
 
 
   }
@@ -327,13 +328,17 @@ export class AuthStore extends DurableObject {
       if (!data.messageId) return json({ reactions: [] });
       return json({ reactions: this.sql.exec("SELECT emoji,COUNT(*) AS count FROM message_reactions WHERE message_id=? GROUP BY emoji", data.messageId).toArray() });
     }
+    if (path === "/presence") {
+      if (typeof data.userId === "string") this.sql.exec("INSERT INTO user_presence (user_id,last_seen) VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET last_seen=excluded.last_seen", data.userId, Date.now());
+      return json({ ok: true });
+    }
     if (path === "/notify-mention") {
       const target = one("SELECT id FROM users WHERE name=? COLLATE NOCASE AND banned=0", data.name);
       if (target && target.id !== data.senderId) this.sql.exec("INSERT INTO notifications (id,user_id,kind,text,created_at) VALUES (?,?,?,?,?)", crypto.randomUUID(), target.id, "mention", "Du wurdest im Chat erwähnt.", Date.now());
       return json({ ok: true });
     }
     if (path === "/community/members") {
-      const users = this.sql.exec("SELECT id,name,role FROM users WHERE banned=0 AND id<>? ORDER BY name COLLATE NOCASE LIMIT 100", data.userId).toArray();
+      const users = this.sql.exec("SELECT u.id,u.name,u.role,COALESCE(p.last_seen,0) AS lastSeen FROM users u LEFT JOIN user_presence p ON p.user_id=u.id WHERE u.banned=0 AND u.id<>? ORDER BY u.name COLLATE NOCASE LIMIT 100", data.userId).toArray().map(user => ({ ...user, isOnline: Date.now() - user.lastSeen < 90000 }));
       return json({ users });
     }
     if (path === "/community/notifications") {
@@ -494,6 +499,11 @@ export class ChatRoom extends DurableObject {
         }
       }
     };
+    if (data.type === "presence_ping") {
+      const authId = this.env.AUTH_STORE.idFromName("tyqora-auth");
+      await this.env.AUTH_STORE.get(authId).fetch("https://auth.internal/presence", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: attachment.id }) });
+      return;
+    }
     if (data.type === "message_edit" || data.type === "message_delete") {
       const canDelete = ["owner", "admin", "moderator"].includes(attachment.role);
       if (data.type === "message_edit" && attachment.role !== "owner") {
