@@ -313,7 +313,8 @@ export class AuthStore extends DurableObject {
       const profile = one("SELECT bio,avatar_url AS avatarUrl,updated_at AS updatedAt FROM profiles WHERE user_id=?", targetId) || { bio: "", avatarUrl: "", updatedAt: 0 };
       const user = one("SELECT id,name,role,created_at AS createdAt,equipped_item AS equippedItem,equipped_badge AS equippedBadge FROM users WHERE id=?", targetId);
       if (!user) return json({ error: "Mitglied nicht gefunden." }, 404);
-      return json({ profile: { ...user, ...profile }, own: targetId === data.userId });
+      const stats = one("SELECT xp,level FROM user_stats WHERE user_id=?", targetId) || { xp: 0, level: 1 };
+      return json({ profile: { ...user, ...profile, ...stats }, own: targetId === data.userId });
     }
     if (path === "/community/profile-save") {
       const bio = typeof data.bio === "string" ? data.bio.trim().slice(0, 240) : "";
@@ -537,7 +538,7 @@ export class ChatRoom extends DurableObject {
     history.push(message);
     await this.ctx.storage.put("history", history.slice(-100));
     broadcast({ type: "message", message });
-    const mentionNames = [...text.matchAll(/@([\\p{L}\\p{N}_-]{3,24})/gu)].map(match => match[1]);
+    const mentionNames = [...text.matchAll(/@([\p{L}\p{N}_-]{3,24})/gu)].map(match => match[1]);
     if (mentionNames.length) {
       const authId = this.env.AUTH_STORE.idFromName("tyqora-auth");
       await Promise.all(mentionNames.map(name => this.env.AUTH_STORE.get(authId).fetch("https://auth.internal/notify-mention", {
