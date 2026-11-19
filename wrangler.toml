@@ -1,0 +1,8 @@
+name = "blockwissen-minecraft"
+compatibility_date = "2026-11-19"
+
+[assets]
+directory = "./public"
+
+[observability]
+enabled = true
