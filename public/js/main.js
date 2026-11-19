@@ -375,6 +375,8 @@ async function loadShop() {
     const owned = data.owned.includes(item.id);
     const equipped = item.type === 'badge' ? data.equippedBadge === item.id : data.equippedItem === item.id;
     button.textContent = !owned ? 'Kaufen' : (equipped ? 'Ablegen' : 'Anlegen');
+    button.classList.toggle('shop-action-unequip', owned && equipped);
+    button.classList.toggle('shop-action-equip', owned && !equipped);
     button.disabled = false;
     button.addEventListener('click', async () => {
       button.disabled = true;
