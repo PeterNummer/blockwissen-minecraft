@@ -304,7 +304,10 @@ footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-s
 .coin-admin-controls button:disabled{opacity:.55;cursor:wait}
 
 
-.shop-action-equip{background:#147d58!important;border-color:#24b47e!important;color:#fff!important}
-.shop-action-equip:hover{background:#0f6849!important}
-.shop-action-unequip{background:#a93242!important;border-color:#e05262!important;color:#fff!important}
-.shop-action-unequip:hover{background:#872735!important}
+.shop-action-equip,.shop-action-unequip{border:1px solid transparent!important;border-radius:8px!important;font-weight:650!important;letter-spacing:.1px;box-shadow:0 2px 5px #0003;transition:background .16s ease,border-color .16s ease,box-shadow .16s ease,transform .16s ease}
+.shop-action-equip{background:#248046!important;border-color:#2d9955!important;color:#fff!important}
+.shop-action-equip:hover{background:#1f6f3d!important;border-color:#35ad62!important;box-shadow:0 4px 10px #24804640}
+.shop-action-unequip{background:#da373c!important;border-color:#e34b50!important;color:#fff!important}
+.shop-action-unequip:hover{background:#b92d32!important;border-color:#f05a60!important;box-shadow:0 4px 10px #da373c40}
+.shop-action-equip:active,.shop-action-unequip:active{transform:translateY(1px);box-shadow:0 1px 3px #0004}
+.shop-action-equip:focus-visible,.shop-action-unequip:focus-visible{outline:2px solid #fff;outline-offset:2px}
