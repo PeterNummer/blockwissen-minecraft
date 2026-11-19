@@ -244,6 +244,12 @@ function updateMessageRoleBadges(userId, role) {
     badge.textContent = label;
   });
 }
+document.addEventListener('click', event => {
+  if (event.target.closest('.message-menu-wrap')) return;
+  document.querySelectorAll('.message-menu').forEach(menu => { menu.hidden = true; });
+  document.querySelectorAll('.message-menu-button').forEach(button => button.setAttribute('aria-expanded', 'false'));
+});
+
 function connectChat() {
   if (!authToken || !chatUser) return;
   if (chatSocket) chatSocket.close();
@@ -275,13 +281,13 @@ function connectChat() {
       (Array.isArray(data.messages) ? data.messages : []).forEach(renderChatMessage);
       chatMessageInput.focus();
     } else if (data.type === 'message' && data.message) renderChatMessage(data.message);
-    else if (data.type === 'role_update' && data.userId === chatUser?.id) {
-      chatUser.role = data.role;
-      showAccount();
-      connectChat();
-    }
-    else if (data.type === 'message_role_update' && data.userId && data.role) {
+    else if (data.type === 'role_update' && data.userId && data.role) {
       updateMessageRoleBadges(data.userId, data.role);
+      if (data.userId === chatUser?.id && chatUser.role !== data.role) {
+        chatUser.role = data.role;
+        showAccount();
+        connectChat();
+      }
     }
     else if (data.type === 'message_update' && data.message) {
       const existing = chatMessages.querySelector('[data-message-id="' + CSS.escape(data.message.id) + '"]');
