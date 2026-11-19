@@ -136,6 +136,7 @@ function showAccount() {
 function renderChatMessage(message) {
   const row = document.createElement('article');
   row.className = 'chat-message';
+  row.dataset.messageId = message.id;
   const meta = document.createElement('div');
   meta.className = 'chat-message-meta';
   const name = document.createElement('strong');
@@ -150,9 +151,61 @@ function renderChatMessage(message) {
   time.dateTime = new Date(message.time).toISOString();
   time.textContent = new Date(message.time).toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
   const body = document.createElement('p');
+  body.className = 'chat-message-body';
   body.textContent = message.text || '';
+  if (message.editedAt) {
+    const edited = document.createElement('span');
+    edited.className = 'message-edited';
+    edited.textContent = ' (bearbeitet)';
+    time.append(edited);
+  }
   meta.append(time);
   row.append(meta, body);
+  if (chatUser?.role === 'owner') {
+    const menuWrap = document.createElement('div');
+    menuWrap.className = 'message-menu-wrap';
+    const menuButton = document.createElement('button');
+    menuButton.type = 'button';
+    menuButton.className = 'message-menu-button';
+    menuButton.textContent = '⋯';
+    menuButton.setAttribute('aria-label', 'Nachrichtenoptionen');
+    menuButton.setAttribute('aria-expanded', 'false');
+    const menu = document.createElement('div');
+    menu.className = 'message-menu';
+    menu.hidden = true;
+    const edit = document.createElement('button');
+    edit.type = 'button';
+    edit.textContent = 'Bearbeiten';
+    edit.addEventListener('click', () => {
+      const updated = window.prompt('Nachricht bearbeiten:', body.textContent);
+      menu.hidden = true;
+      menuButton.setAttribute('aria-expanded', 'false');
+      if (updated === null || !updated.trim()) return;
+      if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+      chatSocket.send(JSON.stringify({type:'message_edit', id:message.id, text:updated}));
+    });
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'message-menu-delete';
+    remove.textContent = 'Löschen';
+    remove.addEventListener('click', () => {
+      menu.hidden = true;
+      menuButton.setAttribute('aria-expanded', 'false');
+      if (!window.confirm('Diese Nachricht wirklich löschen?')) return;
+      if (chatSocket && chatSocket.readyState === WebSocket.OPEN) chatSocket.send(JSON.stringify({type:'message_delete', id:message.id}));
+    });
+    menu.append(edit, remove);
+    menuButton.addEventListener('click', event => {
+      event.stopPropagation();
+      const opening = menu.hidden;
+      document.querySelectorAll('.message-menu').forEach(item => item.hidden = true);
+      document.querySelectorAll('.message-menu-button').forEach(item => item.setAttribute('aria-expanded', 'false'));
+      menu.hidden = !opening;
+      menuButton.setAttribute('aria-expanded', String(opening));
+    });
+    menuWrap.append(menuButton, menu);
+    row.append(menuWrap);
+  }
   chatMessages.append(row);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
@@ -187,6 +240,22 @@ function connectChat() {
       (Array.isArray(data.messages) ? data.messages : []).forEach(renderChatMessage);
       chatMessageInput.focus();
     } else if (data.type === 'message' && data.message) renderChatMessage(data.message);
+    else if (data.type === 'message_update' && data.message) {
+      const existing = chatMessages.querySelector('[data-message-id="' + CSS.escape(data.message.id) + '"]');
+      if (existing) {
+        const body = existing.querySelector('.chat-message-body');
+        if (body) body.textContent = data.message.text;
+        const time = existing.querySelector('time');
+        if (time && !time.querySelector('.message-edited')) {
+          const edited = document.createElement('span');
+          edited.className = 'message-edited';
+          edited.textContent = ' (bearbeitet)';
+          time.append(edited);
+        }
+      }
+    } else if (data.type === 'message_delete' && data.id) {
+      chatMessages.querySelector('[data-message-id="' + CSS.escape(data.id) + '"]')?.remove();
+    }
   });
   socket.addEventListener('close', () => {
     if (socket !== chatSocket) return;
