@@ -29,7 +29,40 @@
 </main>
 <footer><div class="wrap foot"><span>© 2026 Blockwissen Minecraft</span><span>Ein unabhängiges Fanprojekt. Nicht mit Mojang oder Microsoft verbunden.</span></div></footer>
 <div id="guideModal" class="guide-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="guideTitle"><div class="guide-dialog"><div class="guide-dialog-top"><span class="tag">BLOCKWISSEN GUIDE</span><button type="button" class="close guide-close" id="closeGuide" aria-label="Guide schließen">✕</button></div><div id="guideBody"></div></div></div>
-<div id="chatOverlay" aria-hidden="true"><div class="chat-shell"><aside class="chat-side"><div class="chat-brand">TYQORA <span>CHAT</span></div><div class="side-label">NACHRICHTEN</div><div class="channel active"># willkommen</div><div class="channel"># allgemein</div><div class="channel"># minecraft</div><div class="side-label">DIREKTNACHRICHTEN</div><div class="channel">Noch keine Chats</div></aside><div class="chat-main"><div class="chat-top"><span># willkommen</span><button class="close" id="closeChat">Schließen&nbsp; ✕</button></div><div class="chat-content"><div><div class="welcome-icon">💬</div><h2>Willkommen bei TYQORA CHAT</h2><p>Ein eigener Chatbereich im Stil eines Community-Chats. Die Oberfläche ist vorbereitet – Anmeldung, echte Nachrichten und Synchronisierung werden später mit einem Backend verbunden.</p><div class="chat-note">Dies ist aktuell eine Vorschau. Nachrichten werden noch nicht versendet oder gespeichert.</div></div></div></div></div></div>
+<div id="chatOverlay" aria-hidden="true">
+  <div class="chat-shell">
+    <aside class="chat-side">
+      <div class="chat-brand">TYQORA <span>CHAT</span></div>
+      <div class="side-label">TEXTKANÄLE</div>
+      <button class="channel active" data-channel="welcome"># willkommen</button>
+      <button class="channel" data-channel="general"># allgemein</button>
+      <button class="channel" data-channel="minecraft"># minecraft</button>
+      <div class="chat-side-bottom"><span class="connection-dot" id="connectionDot"></span><span id="connectionLabel">Nicht verbunden</span></div>
+    </aside>
+    <section class="chat-main">
+      <div class="chat-top"><span id="activeChannel"># willkommen</span><button class="close" id="closeChat">Schließen&nbsp; ✕</button></div>
+      <div class="chat-login" id="chatLogin">
+        <div class="login-card">
+          <div class="welcome-icon">💬</div><h2>Willkommen bei TYQORA</h2>
+          <p>Gib deinen Anzeigenamen und den Zugangscode ein, um den Chat zu betreten.</p>
+          <form id="chatLoginForm">
+            <label for="chatName">Anzeigename</label><input id="chatName" maxlength="24" minlength="2" autocomplete="nickname" required placeholder="Dein Name">
+            <label for="chatCode">Zugangscode</label><input id="chatCode" type="password" autocomplete="off" required placeholder="Zugangscode">
+            <button class="chat-primary" type="submit" id="chatLoginButton">Chat betreten</button>
+          </form>
+          <p class="chat-feedback" id="chatLoginFeedback" role="status"></p>
+        </div>
+      </div>
+      <div class="chat-room" id="chatRoom" hidden>
+        <div class="chat-messages" id="chatMessages" aria-live="polite"></div>
+        <form class="chat-composer" id="chatMessageForm">
+          <input id="chatMessageInput" maxlength="1000" autocomplete="off" placeholder="Nachricht an # willkommen" aria-label="Nachricht" required>
+          <button class="chat-primary" type="submit">Senden</button>
+        </form>
+      </div>
+    </section>
+  </div>
+</div>
 <script src="/js/main.js" defer></script>
 </body>
 </html>
