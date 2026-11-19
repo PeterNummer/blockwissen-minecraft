@@ -137,6 +137,10 @@ export default {
       }
       if (url.pathname.startsWith("/api/admin/")) {
         if (auth.user.role !== "owner") return json({ error: "Nur der Owner darf diese Aktion ausführen." }, 403);
+        if (url.pathname === "/api/admin/coins" && request.method === "POST") {
+          const data = await readBody(request);
+          return storeCall(env, "/coins", data);
+        }
         if (url.pathname === "/api/admin/users" && request.method === "GET") {
           const result = await storeCall(env, "/users", {});
           return new Response(result.body, { status: result.status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
@@ -257,8 +261,17 @@ export class AuthStore extends DurableObject {
       return json({ ok: true, equippedItem: data.itemId || "" });
     }
     if (path === "/users") {
-      const users = this.sql.exec("SELECT id,name,role,created_at AS createdAt,banned FROM users ORDER BY created_at DESC").toArray();
+      const users = this.sql.exec("SELECT id,name,role,created_at AS createdAt,banned,coins FROM users ORDER BY created_at DESC").toArray();
       return json({ users });
+    }
+    if (path === "/coins") {
+      const amount = Number(data.amount);
+      if (!Number.isSafeInteger(amount) || amount < 1 || amount > 100000) return json({ error: "Bitte gib eine ganze Zahl zwischen 1 und 100.000 ein." }, 400);
+      const target = one("SELECT id FROM users WHERE id=?", data.userId);
+      if (!target) return json({ error: "Account nicht gefunden." }, 404);
+      this.sql.exec("UPDATE users SET coins=coins+? WHERE id=?", amount, data.userId);
+      const updated = one("SELECT coins FROM users WHERE id=?", data.userId);
+      return json({ ok: true, coins: updated.coins });
     }
     if (path === "/role") {
       if (!["admin","moderator","member"].includes(data.role)) return json({ error: "Ungültige Rolle." }, 400);
