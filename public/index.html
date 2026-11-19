@@ -64,6 +64,17 @@
             <button class="chat-primary" type="submit" id="chatLoginButton">Anmelden</button>
           </form>
           <p class="chat-feedback" id="chatLoginFeedback" role="status"></p>
+          <details class="account-reset">
+            <summary>Alle Accounts zurücksetzen</summary>
+            <p>Diese Aktion löscht sämtliche Benutzerkonten und Sitzungen, einschließlich des Owner-Accounts. Der Chatverlauf bleibt erhalten.</p>
+            <form id="resetAccountsForm">
+              <label for="resetRecoveryCode">Wiederherstellungscode</label>
+              <input id="resetRecoveryCode" type="password" required autocomplete="off">
+              <label for="resetConfirmText">Zur Bestätigung ALLE ACCOUNTS LÖSCHEN eingeben</label>
+              <input id="resetConfirmText" required autocomplete="off">
+              <button class="danger-button" type="submit" id="resetAccountsButton">Alle Accounts endgültig löschen</button>
+            </form>
+          </details>
           <p class="chat-privacy-hint">Verwende keine persönlichen Daten als Benutzernamen oder in Chatnachrichten.</p>
         </div>
       </div>
@@ -85,6 +96,6 @@
     </section>
   </div>
 </div>
-<script src="/js/main.js?v=reset-ui" defer></script>
+<script src="/js/main.js?v=account-reset" defer></script>
 </body>
 </html>
