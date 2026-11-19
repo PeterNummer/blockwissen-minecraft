@@ -122,7 +122,16 @@ export default {
           return new Response(result.body, { status: result.status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
         }
         const data = await readBody(request);
-        if (url.pathname === "/api/admin/role" && request.method === "POST") return storeCall(env, "/role", data);
+        if (url.pathname === "/api/admin/role" && request.method === "POST") {
+          const changed = await storeCall(env, "/role", data);
+          if (changed.ok) {
+            const update = { userId: data.userId, role: data.role };
+            await Promise.all([...CHANNELS].map(channel => env.CHAT_ROOM.get(env.CHAT_ROOM.idFromName(channel)).fetch("https://chat.internal/role-update", {
+              method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(update)
+            })));
+          }
+          return changed;
+        }
         if (url.pathname === "/api/admin/ban" && request.method === "POST") return storeCall(env, "/ban", data);
         if (url.pathname === "/api/admin/delete" && request.method === "POST") return storeCall(env, "/delete", data);
         if (url.pathname === "/api/admin/reset-all" && request.method === "POST") return storeCall(env, "/reset-all", {});
@@ -237,6 +246,18 @@ export class AuthStore extends DurableObject {
 
 export class ChatRoom extends DurableObject {
   async fetch(request) {
+    if (new URL(request.url).pathname === "/role-update" && request.method === "POST") {
+      const update = await readBody(request);
+      if (!update.userId || !["owner","admin","moderator","member"].includes(update.role)) return json({ error: "Ungültiges Rollenupdate." }, 400);
+      for (const socket of this.ctx.getWebSockets()) {
+        const state = socket.deserializeAttachment() || {};
+        if (state.id === update.userId) {
+          socket.serializeAttachment({ ...state, role: update.role });
+          try { socket.send(JSON.stringify({ type: "role_update", userId: update.userId, role: update.role })); } catch {}
+        }
+      }
+      return json({ ok: true });
+    }
     if (request.headers.get("Upgrade") !== "websocket") return new Response("WebSocket-Verbindung erforderlich", { status: 426 });
     let user;
     try { user = JSON.parse(request.headers.get("X-TYQORA-User") || "null"); } catch {}
@@ -264,8 +285,13 @@ export class ChatRoom extends DurableObject {
       }
     };
     if (data.type === "message_edit" || data.type === "message_delete") {
-      if (attachment.role !== "owner") {
-        ws.send(JSON.stringify({ type: "error", message: "Nur der Owner darf Nachrichten bearbeiten oder löschen." }));
+      const canDelete = ["owner", "admin", "moderator"].includes(attachment.role);
+      if (data.type === "message_edit" && attachment.role !== "owner") {
+        ws.send(JSON.stringify({ type: "error", message: "Nur der Owner darf Nachrichten bearbeiten." }));
+        return;
+      }
+      if (data.type === "message_delete" && !canDelete) {
+        ws.send(JSON.stringify({ type: "error", message: "Nur Owner, Admins und Moderatoren dürfen Nachrichten löschen." }));
         return;
       }
       const index = history.findIndex(item => item.id === data.id);
