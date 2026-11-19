@@ -12,6 +12,8 @@ export default {
         return new Response("Unbekannter Kanal", { status: 404 });
       }
 
+      const origin = request.headers.get("Origin");
+      if (origin !== url.origin) return new Response("Unzulässiger Ursprung", { status: 403 });
       const id = env.CHAT_ROOM.idFromName(channel);
       return env.CHAT_ROOM.get(id).fetch(request);
     }
@@ -74,6 +76,12 @@ export class ChatRoom extends DurableObject {
     const text = data.text.trim().slice(0, 1000);
     if (!text) return;
 
+    const now = Date.now();
+    if (attachment.lastMessageAt && now - attachment.lastMessageAt < 700) {
+      ws.send(JSON.stringify({ type: "error", message: "Bitte warte kurz vor der nächsten Nachricht." }));
+      return;
+    }
+    ws.serializeAttachment({ ...attachment, lastMessageAt: now });
     const message = {
       id: crypto.randomUUID(),
       name: attachment.name,
