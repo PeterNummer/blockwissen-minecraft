@@ -45,7 +45,7 @@
       <button class="channel active" data-channel="welcome"># willkommen</button>
       <button class="channel" data-channel="general"># allgemein</button>
       <button class="channel" data-channel="minecraft"># minecraft</button>
-      <div class="chat-side-bottom"><span class="connection-dot" id="connectionDot"></span><span id="connectionLabel">Nicht verbunden</span></div><div class="chat-account" id="chatAccount" hidden><strong id="accountName"></strong><span id="accountRole"></span><button type="button" id="openAdmin" hidden>⚙ Einstellungen</button><button type="button" id="chatLogout">Abmelden</button></div>
+      <div class="chat-side-bottom"><span class="connection-dot" id="connectionDot"></span><span id="connectionLabel">Nicht verbunden</span></div><div class="chat-account" id="chatAccount" hidden><strong id="accountName"></strong><span id="accountRole"></span><span class="coin-balance" id="coinBalance">🪙 100 Coins</span><button type="button" id="openShop">🛍 Coin-Shop</button><button type="button" id="openAdmin" hidden>⚙ Einstellungen</button><button type="button" id="chatLogout">Abmelden</button></div>
     </aside>
     <section class="chat-main">
       <div class="chat-top"><span id="activeChannel"># willkommen</span><div class="chat-top-actions"><button type="button" class="chat-refresh" id="chatRefresh" title="Nachrichten und Rollen aktualisieren">↻ Aktualisieren</button><button class="close" id="closeChat">Schließen&nbsp; ✕</button></div></div>
@@ -78,6 +78,7 @@
           <p class="chat-privacy-hint">Verwende keine persönlichen Daten als Benutzernamen oder in Chatnachrichten.</p>
         </div>
       </div>
+      <section class="shop-panel" id="shopPanel" hidden><div class="shop-heading"><div><span class="admin-kicker">TYQORA STORE</span><h2>Coin-Shop</h2><p>Hol dir kosmetische Extras für deinen Chat-Auftritt.</p></div><div class="shop-balance" id="shopBalance">🪙 100 Coins</div></div><div class="shop-toolbar"><button class="close" id="shopBack" type="button">← Zurück zum Chat</button><button class="close" id="shopRefresh" type="button">Aktualisieren</button></div><div class="shop-grid" id="shopItems"></div><p class="chat-feedback" id="shopFeedback" role="status"></p></section>
       <section class="admin-panel" id="adminPanel" hidden>
         <div class="admin-heading"><div><span class="admin-kicker">TYQORA CONTROL</span><h2>Benutzerverwaltung</h2><p>Owner-Dashboard · Nur für deinen Owner-Account</p></div><button class="close" id="adminRefresh" type="button">Aktualisieren</button></div>
         <div class="admin-stats"><div><strong id="userCount">0</strong><span>Registrierte Accounts</span></div><div><strong id="ownerCount">0</strong><span>Owner</span></div></div>
