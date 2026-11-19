@@ -88,7 +88,8 @@ const userList = document.getElementById('userList');
 const userSearch = document.getElementById('userSearch');
 let chatSocket = null;
 let chatUser = null;
-let authToken = sessionStorage.getItem('tyqora_session') || '';
+let authToken = localStorage.getItem('tyqora_session') || sessionStorage.getItem('tyqora_session') || '';
+if (authToken) localStorage.setItem('tyqora_session', authToken);
 let selectedChannel = 'welcome';
 let chatAuthenticated = false;
 let authMode = 'login';
@@ -396,7 +397,7 @@ async function loadAdminUsers() {
     const name = document.createElement('strong');
     name.textContent = user.name;
     const meta = document.createElement('span');
-    meta.textContent = new Date(user.createdAt).toLocaleDateString('de-DE') + (user.banned ? ' · Gesperrt' : '');
+    meta.textContent = new Date(user.createdAt).toLocaleDateString('de-DE') + (user.banned ? ' · Gesperrt' : '') + ' · 🪙 ' + Number(user.coins || 0) + ' Coins';
     details.append(name, meta);
     const actions = document.createElement('div');
     actions.className = 'user-actions';
@@ -432,7 +433,31 @@ async function loadAdminUsers() {
     if (user.role === 'owner') {
       role.disabled = true; save.disabled = true; ban.disabled = true; remove.disabled = true;
     }
+    const coinControls = document.createElement('div');
+    coinControls.className = 'coin-admin-controls';
+    const coinAmount = document.createElement('input');
+    coinAmount.type = 'number'; coinAmount.min = '1'; coinAmount.max = '100000'; coinAmount.step = '1'; coinAmount.value = '100';
+    coinAmount.setAttribute('aria-label', 'Coins für ' + user.name);
+    const giveCoins = document.createElement('button');
+    giveCoins.type = 'button'; giveCoins.textContent = '🪙 Coins geben';
+    giveCoins.addEventListener('click', async () => {
+      const amount = Number(coinAmount.value);
+      if (!Number.isSafeInteger(amount) || amount < 1 || amount > 100000) {
+        document.getElementById('adminFeedback').textContent = 'Bitte gib eine ganze Zahl zwischen 1 und 100.000 ein.';
+        return;
+      }
+      giveCoins.disabled = true;
+      try {
+        const result = await api('/api/admin/coins', {userId:user.id, amount});
+        document.getElementById('adminFeedback').textContent = user.name + ' wurden ' + amount + ' Coins gegeben. Neues Guthaben: ' + result.coins + '.';
+        if (chatUser?.id === user.id) { chatUser.coins = result.coins; showAccount(); }
+        await loadAdminUsers();
+      } catch (error) { document.getElementById('adminFeedback').textContent = error.message; }
+      finally { giveCoins.disabled = false; }
+    });
+    coinControls.append(coinAmount, giveCoins);
     actions.append(role, save, ban, remove);
+    card.append(coinControls);
     card.append(details, actions);
     userList.append(card);
   });
@@ -460,7 +485,7 @@ chatLoginForm.addEventListener('submit', async event => {
     } else {
       const result = await api('/api/login', {name, password});
       authToken = result.token;
-      sessionStorage.setItem('tyqora_session', authToken);
+      localStorage.setItem('tyqora_session', authToken);
       chatUser = result.user;
       showAccount();
       loadShop().catch(() => {});
@@ -509,6 +534,7 @@ document.getElementById('deleteAllAccounts').addEventListener('click', async () 
     await api('/api/admin/reset-all', {});
     if (chatSocket) chatSocket.close();
     authToken = ''; chatUser = null; chatAuthenticated = false;
+    localStorage.removeItem('tyqora_session');
     sessionStorage.removeItem('tyqora_session');
     chatAccount.hidden = true;
     adminPanel.hidden = true;
@@ -523,7 +549,8 @@ document.getElementById('chatLogout').addEventListener('click', async () => {
   try { await api('/api/logout', {}); } catch {}
   if (chatSocket) chatSocket.close();
   authToken = ''; chatUser = null; chatAuthenticated = false;
-  sessionStorage.removeItem('tyqora_session');
+  localStorage.removeItem('tyqora_session');
+    sessionStorage.removeItem('tyqora_session');
   chatAccount.hidden = true; showChatLogin('Du wurdest abgemeldet.'); setChatConnection('offline', 'Nicht verbunden');
 });
 async function restoreSession() {
@@ -536,6 +563,7 @@ async function restoreSession() {
     connectChat();
   } catch {
     authToken = '';
+    localStorage.removeItem('tyqora_session');
     sessionStorage.removeItem('tyqora_session');
   }
 }
@@ -558,6 +586,7 @@ resetAccountsForm.addEventListener('submit', async event => {
     const result = await api('/api/owner/reset-all', { recoveryCode: code });
     if (chatSocket) chatSocket.close();
     authToken = ''; chatUser = null; chatAuthenticated = false;
+    localStorage.removeItem('tyqora_session');
     sessionStorage.removeItem('tyqora_session');
     chatAccount.hidden = true;
     adminPanel.hidden = true;
