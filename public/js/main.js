@@ -14,6 +14,17 @@ function closeChat(){
   overlay.setAttribute('aria-hidden','true');
   document.body.style.overflow='';
 }
+document.getElementById('chatRefresh')?.addEventListener('click', () => {
+  const button = document.getElementById('chatRefresh');
+  if (!authToken || !chatUser) return;
+  button.disabled = true;
+  button.textContent = '↻ Aktualisiere …';
+  connectChat();
+  window.setTimeout(() => {
+    button.disabled = false;
+    button.textContent = '↻ Aktualisieren';
+  }, 1200);
+});
 document.getElementById('closeChat').addEventListener('click',closeChat);
 
 const guideModal=document.getElementById('guideModal');
@@ -137,6 +148,7 @@ function renderChatMessage(message) {
   const row = document.createElement('article');
   row.className = 'chat-message';
   row.dataset.messageId = message.id;
+  if (message.userId) row.dataset.userId = message.userId;
   const meta = document.createElement('div');
   meta.className = 'chat-message-meta';
   const name = document.createElement('strong');
@@ -211,6 +223,27 @@ function renderChatMessage(message) {
   chatMessages.append(row);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
+function updateMessageRoleBadges(userId, role) {
+  chatMessages.querySelectorAll('.chat-message').forEach(row => {
+    if (row.dataset.userId !== userId) return;
+    const meta = row.querySelector('.chat-message-meta');
+    if (!meta) return;
+    let badge = meta.querySelector('.message-role');
+    const label = ({owner:'OWNER',admin:'ADMIN',moderator:'MOD',member:''})[role] || '';
+    if (!label) {
+      badge?.remove();
+      return;
+    }
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'message-role';
+      const name = meta.querySelector('strong');
+      if (name) name.after(badge);
+    }
+    badge.className = 'message-role role-' + role;
+    badge.textContent = label;
+  });
+}
 function connectChat() {
   if (!authToken || !chatUser) return;
   if (chatSocket) chatSocket.close();
@@ -246,6 +279,9 @@ function connectChat() {
       chatUser.role = data.role;
       showAccount();
       connectChat();
+    }
+    else if (data.type === 'message_role_update' && data.userId && data.role) {
+      updateMessageRoleBadges(data.userId, data.role);
     }
     else if (data.type === 'message_update' && data.message) {
       const existing = chatMessages.querySelector('[data-message-id="' + CSS.escape(data.message.id) + '"]');
