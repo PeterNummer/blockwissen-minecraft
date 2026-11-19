@@ -160,7 +160,7 @@ function renderChatMessage(message) {
   name.textContent = message.name || 'Mitglied';
   const nameCosmetic = shopState.items.find(item => item.id === message.equippedItem && item.type === 'name') || null;
   const badgeCosmetic = shopState.items.find(item => item.id === message.equippedBadge && item.type === 'badge') || null;
-  if (nameCosmetic) name.style.color = nameCosmetic.color;
+  if (nameCosmetic) name.classList.add('cosmetic-name', 'cosmetic-name-' + nameCosmetic.id);
   meta.append(name);
   if (badgeCosmetic) {
     const badge = document.createElement('span');
@@ -369,6 +369,7 @@ async function loadShop() {
     const card = document.createElement('article'); card.className = 'shop-item';
     const icon = document.createElement('div'); icon.className = 'shop-item-icon'; icon.textContent = item.icon;
     const title = document.createElement('h3'); title.textContent = item.name;
+    if (item.type === 'name') title.classList.add('cosmetic-name', 'cosmetic-name-' + item.id, 'shop-cosmetic-preview');
     const description = document.createElement('p'); description.textContent = item.description;
     const price = document.createElement('strong'); price.className = 'shop-price'; price.textContent = '🪙 ' + item.price;
     const button = document.createElement('button'); button.type = 'button'; button.className = 'chat-primary shop-action';
