@@ -376,7 +376,10 @@ async function loadShop() {
     const button = document.createElement('button'); button.type = 'button'; button.className = 'chat-primary shop-action';
     const owned = data.owned.includes(item.id);
     const equipped = item.type === 'badge' ? data.equippedBadge === item.id : data.equippedItem === item.id;
-    button.textContent = !owned ? 'Kaufen' : (equipped ? 'Ablegen' : 'Anlegen');
+    const buttonLabel = document.createElement('span');
+    buttonLabel.className = 'cosmetic-button-label';
+    buttonLabel.textContent = !owned ? 'Kaufen' : (equipped ? 'Ablegen' : 'Anlegen');
+    button.append(buttonLabel);
     button.classList.toggle('shop-action-unequip', owned && equipped);
     button.classList.toggle('shop-action-equip', owned && !equipped && item.type !== 'name');
     if (item.type === 'name') button.classList.add('cosmetic-shop-button', 'cosmetic-shop-button-' + item.id);
