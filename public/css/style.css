@@ -125,3 +125,10 @@ footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-s
   .login-card{margin-top:0}
 }
 
+
+/* Blockwissen Minecraft – Logo */
+.brand{display:inline-flex;align-items:center;gap:11px;text-decoration:none}
+.brand-mark{width:42px;height:42px;flex:0 0 42px;filter:drop-shadow(0 3px 7px #0008)}
+.brand-wordmark{display:flex;flex-direction:column;line-height:.95;letter-spacing:1.1px;font-weight:900}
+.brand-wordmark>span{margin-top:5px;color:#9ce36b;font-size:.62em;letter-spacing:2.8px}
+@media(max-width:520px){.brand{gap:7px}.brand-mark{width:34px;height:34px;flex-basis:34px}.brand-wordmark{font-size:.88rem}}
