@@ -64,6 +64,8 @@ document.addEventListener('keydown',event=>{
 const chatLogin = document.getElementById('chatLogin');
 const chatRoom = document.getElementById('chatRoom');
 const adminPanel = document.getElementById('adminPanel');
+const shopPanel = document.getElementById('shopPanel');
+let shopState = { coins: 100, owned: [], equippedItem: '', items: [] };
 const chatLoginForm = document.getElementById('chatLoginForm');
 const chatLoginFeedback = document.getElementById('chatLoginFeedback');
 const chatMessages = document.getElementById('chatMessages');
@@ -99,6 +101,7 @@ function showChatLogin(message = '') {
   chatLogin.hidden = false;
   chatRoom.hidden = true;
   adminPanel.hidden = true;
+  shopPanel.hidden = true;
   chatLoginFeedback.textContent = message;
   chatLoginButton.disabled = false;
   chatLoginButton.textContent = authMode === 'register' ? 'Account erstellen' : 'Anmelden';
@@ -142,6 +145,7 @@ function showAccount() {
   chatAccount.hidden = false;
   document.getElementById('accountName').textContent = chatUser.name;
   document.getElementById('accountRole').textContent = ({owner:'OWNER',admin:'ADMIN',moderator:'MODERATOR',member:'MITGLIED'})[chatUser.role] || 'MITGLIED';
+  document.getElementById('coinBalance').textContent = '🪙 ' + Number(chatUser.coins ?? shopState.coins ?? 100) + ' Coins';
   openAdminButton.hidden = chatUser.role !== 'owner';
 }
 function renderChatMessage(message) {
@@ -153,6 +157,9 @@ function renderChatMessage(message) {
   meta.className = 'chat-message-meta';
   const name = document.createElement('strong');
   name.textContent = message.name || 'Mitglied';
+  const cosmetic = shopState.items.find(item => item.id === message.equippedItem) || null;
+  if (cosmetic?.type === 'name') name.style.color = cosmetic.color;
+  if (cosmetic?.type === 'badge') { const badge = document.createElement('span'); badge.className = 'cosmetic-badge'; badge.textContent = cosmetic.badge; badge.title = cosmetic.name; name.after(badge); }
   if (message.role) {
     const role = document.createElement('span');
     role.className = 'message-role role-' + message.role;
@@ -276,6 +283,7 @@ function connectChat() {
       chatAuthenticated = true;
       chatLogin.hidden = true;
       adminPanel.hidden = true;
+      shopPanel.hidden = true;
       chatRoom.hidden = false;
       setChatConnection('online', 'Verbunden');
       (Array.isArray(data.messages) ? data.messages : []).forEach(renderChatMessage);
@@ -288,6 +296,18 @@ function connectChat() {
         showAccount();
         connectChat();
       }
+    }
+    else if (data.type === 'cosmetic_update' && data.userId) {
+      chatMessages.querySelectorAll('.chat-message').forEach(row => {
+        if (row.dataset.userId !== data.userId) return;
+        const meta = row.querySelector('.chat-message-meta');
+        const name = meta?.querySelector('strong');
+        if (!name) return;
+        const item = shopState.items.find(entry => entry.id === data.itemId);
+        name.style.color = item?.type === 'name' ? item.color : '';
+        meta.querySelector('.cosmetic-badge')?.remove();
+        if (item?.type === 'badge') { const badge = document.createElement('span'); badge.className = 'cosmetic-badge'; badge.textContent = item.badge; badge.title = item.name; name.after(badge); }
+      });
     }
     else if (data.type === 'message_update' && data.message) {
       const existing = chatMessages.querySelector('[data-message-id="' + CSS.escape(data.message.id) + '"]');
@@ -316,6 +336,51 @@ function connectChat() {
     setChatConnection('offline', 'Verbindungsfehler');
   });
 }
+
+async function loadShop() {
+  const data = await api('/api/shop', null, 'GET');
+  shopState = data;
+  chatUser.coins = data.coins;
+  showAccount();
+  document.getElementById('shopBalance').textContent = '🪙 ' + data.coins + ' Coins';
+  const container = document.getElementById('shopItems');
+  container.replaceChildren();
+  data.items.forEach(item => {
+    const card = document.createElement('article'); card.className = 'shop-item';
+    const icon = document.createElement('div'); icon.className = 'shop-item-icon'; icon.textContent = item.icon;
+    const title = document.createElement('h3'); title.textContent = item.name;
+    const description = document.createElement('p'); description.textContent = item.description;
+    const price = document.createElement('strong'); price.className = 'shop-price'; price.textContent = '🪙 ' + item.price;
+    const button = document.createElement('button'); button.type = 'button'; button.className = 'chat-primary shop-action';
+    const owned = data.owned.includes(item.id);
+    button.textContent = owned ? (data.equippedItem === item.id ? 'Ausgerüstet' : 'Ausrüsten') : 'Kaufen';
+    button.disabled = data.equippedItem === item.id;
+    button.addEventListener('click', async () => {
+      button.disabled = true;
+      try {
+        if (owned) await api('/api/shop/equip', { itemId: item.id });
+        else await api('/api/shop/buy', { itemId: item.id });
+        await loadShop();
+        document.getElementById('shopFeedback').textContent = owned ? 'Cosmetic ausgerüstet!' : item.name + ' gekauft!';
+      } catch (error) { document.getElementById('shopFeedback').textContent = error.message; button.disabled = false; }
+    });
+    card.append(icon, title, description, price, button);
+    if (owned && data.equippedItem !== item.id) {
+      const unequip = document.createElement('button'); unequip.type = 'button'; unequip.className = 'shop-secondary'; unequip.textContent = 'Cosmetic ablegen';
+      unequip.addEventListener('click', async () => { try { await api('/api/shop/equip', { itemId: '' }); await loadShop(); } catch (error) { document.getElementById('shopFeedback').textContent = error.message; } });
+      card.append(unequip);
+    }
+    container.append(card);
+  });
+}
+document.getElementById('openShop').addEventListener('click', async () => {
+  chatRoom.hidden = true; adminPanel.hidden = true; shopPanel.hidden = false;
+  document.getElementById('shopFeedback').textContent = '';
+  try { await loadShop(); } catch (error) { document.getElementById('shopFeedback').textContent = error.message; }
+});
+document.getElementById('shopBack').addEventListener('click', () => { shopPanel.hidden = true; chatRoom.hidden = false; });
+document.getElementById('shopRefresh').addEventListener('click', () => loadShop().catch(error => { document.getElementById('shopFeedback').textContent = error.message; }));
+
 async function loadAdminUsers() {
   const result = await api('/api/admin/users', null, 'GET');
   const users = result.users || [];
@@ -398,6 +463,7 @@ chatLoginForm.addEventListener('submit', async event => {
       sessionStorage.setItem('tyqora_session', authToken);
       chatUser = result.user;
       showAccount();
+      loadShop().catch(() => {});
       connectChat();
     }
   } catch (error) {
@@ -426,6 +492,7 @@ openAdminButton.addEventListener('click', async () => {
   if (chatUser?.role !== 'owner') return;
   chatRoom.hidden = true;
   chatLogin.hidden = true;
+  shopPanel.hidden = true;
   adminPanel.hidden = false;
   document.getElementById('adminFeedback').textContent = '';
   try { await loadAdminUsers(); }
@@ -465,6 +532,7 @@ async function restoreSession() {
     const result = await api('/api/me', null, 'GET');
     chatUser = result.user;
     showAccount();
+    loadShop().catch(() => {});
     connectChat();
   } catch {
     authToken = '';
