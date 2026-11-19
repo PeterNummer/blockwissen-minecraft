@@ -95,3 +95,8 @@ footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-s
 .message-role{font-size:.62rem;font-weight:900;letter-spacing:.6px;color:#b4f27b}
 .role-owner{color:#ffcf70}.role-admin{color:#ff9a9a}.role-moderator{color:#83c7ff}
 @media(max-width:760px){.admin-panel{padding:16px}.user-card{align-items:flex-start;flex-direction:column}.user-actions{justify-content:flex-start}.admin-heading{align-items:flex-start;flex-direction:column}}
+
+/* Make the login/register switch reliably clickable */
+.auth-tabs{position:relative;z-index:5;display:flex;width:100%;pointer-events:auto}
+.auth-tabs .auth-tab{position:relative;z-index:6;display:block;min-height:44px;flex:1;pointer-events:auto;touch-action:manipulation}
+.auth-tab:focus-visible{outline:3px solid #8bdc72;outline-offset:3px}
