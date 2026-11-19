@@ -175,6 +175,14 @@ export default {
       const action = url.pathname.slice("/api/community/".length);
       const payload = { ...data, userId: auth.user.id };
       if (action === "profile" && request.method === "GET") payload.targetId = url.searchParams.get("id") || auth.user.id;
+      if (action === "members" && request.method === "GET") return storeCall(env, "/community/members", payload);
+      if (action === "notifications" && request.method === "GET") return storeCall(env, "/community/notifications", payload);
+      if (action === "notifications/read" && request.method === "POST") return storeCall(env, "/community/notifications-read", payload);
+      if (action === "dm" && request.method === "GET") { payload.otherId = url.searchParams.get("with") || ""; return storeCall(env, "/community/dm-list", payload); }
+      if (action === "dm" && request.method === "POST") return storeCall(env, "/community/dm-send", payload);
+      if (action === "react" && request.method === "POST") return storeCall(env, "/community/react", payload);
+      if (action === "xp" && request.method === "POST") return storeCall(env, "/community/xp", payload);
+
       if (action === "profile" && request.method === "GET") return storeCall(env, "/community/profile-get", payload);
       if (action === "profile" && request.method === "POST") return storeCall(env, "/community/profile-save", payload);
       return json({ error: "Unbekannte Community-Aktion." }, 404);
@@ -218,6 +226,11 @@ export class AuthStore extends DurableObject {
     try { this.sql.exec("ALTER TABLE users ADD COLUMN equipped_badge TEXT NOT NULL DEFAULT ''"); } catch {}
     this.sql.exec("UPDATE users SET equipped_badge=equipped_item,equipped_item='' WHERE equipped_item='star_badge' AND equipped_badge=''");
     this.sql.exec("CREATE TABLE IF NOT EXISTS profiles (user_id TEXT PRIMARY KEY, bio TEXT NOT NULL DEFAULT '', avatar_url TEXT NOT NULL DEFAULT '', updated_at INTEGER NOT NULL)");
+    this.sql.exec("CREATE TABLE IF NOT EXISTS dm_messages (id TEXT PRIMARY KEY, sender_id TEXT NOT NULL, recipient_id TEXT NOT NULL, text TEXT NOT NULL, created_at INTEGER NOT NULL, read_at INTEGER NOT NULL DEFAULT 0)");
+    this.sql.exec("CREATE TABLE IF NOT EXISTS message_reactions (message_id TEXT NOT NULL, user_id TEXT NOT NULL, emoji TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY(message_id,user_id,emoji))");
+    this.sql.exec("CREATE TABLE IF NOT EXISTS notifications (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, kind TEXT NOT NULL, text TEXT NOT NULL, created_at INTEGER NOT NULL, read_at INTEGER NOT NULL DEFAULT 0)");
+    this.sql.exec("CREATE TABLE IF NOT EXISTS user_stats (user_id TEXT PRIMARY KEY, xp INTEGER NOT NULL DEFAULT 0, level INTEGER NOT NULL DEFAULT 1, last_xp_at INTEGER NOT NULL DEFAULT 0)");
+
 
   }
   async fetch(request) {
@@ -307,6 +320,55 @@ export class AuthStore extends DurableObject {
       if (avatarUrl && !/^https:\/\//i.test(avatarUrl)) return json({ error: "Profilbild muss eine HTTPS-Adresse sein." }, 400);
       this.sql.exec("INSERT INTO profiles (user_id,bio,avatar_url,updated_at) VALUES (?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET bio=excluded.bio,avatar_url=excluded.avatar_url,updated_at=excluded.updated_at", data.userId, bio, avatarUrl, Date.now());
       return json({ ok: true });
+    }
+    if (path === "/community/members") {
+      const users = this.sql.exec("SELECT id,name,role FROM users WHERE banned=0 AND id<>? ORDER BY name COLLATE NOCASE LIMIT 100", data.userId).toArray();
+      return json({ users });
+    }
+    if (path === "/community/notifications") {
+      const items = this.sql.exec("SELECT id,kind,text,created_at AS createdAt,read_at AS readAt FROM notifications WHERE user_id=? ORDER BY created_at DESC LIMIT 50", data.userId).toArray();
+      return json({ notifications: items, unread: items.filter(item => !item.readAt).length });
+    }
+    if (path === "/community/notifications-read") {
+      this.sql.exec("UPDATE notifications SET read_at=? WHERE user_id=? AND read_at=0", Date.now(), data.userId);
+      return json({ ok: true });
+    }
+    if (path === "/community/dm-list") {
+      if (!data.otherId) {
+        const users = this.sql.exec("SELECT DISTINCT u.id,u.name FROM users u JOIN dm_messages m ON (m.sender_id=u.id OR m.recipient_id=u.id) WHERE (m.sender_id=? OR m.recipient_id=?) AND u.id<>? ORDER BY u.name COLLATE NOCASE", data.userId, data.userId, data.userId).toArray();
+        return json({ users });
+      }
+      const other = one("SELECT id,name FROM users WHERE id=? AND banned=0", data.otherId);
+      if (!other) return json({ error: "Mitglied nicht gefunden." }, 404);
+      const messages = this.sql.exec("SELECT id,sender_id AS senderId,recipient_id AS recipientId,text,created_at AS createdAt,read_at AS readAt FROM dm_messages WHERE (sender_id=? AND recipient_id=?) OR (sender_id=? AND recipient_id=?) ORDER BY created_at DESC LIMIT 100", data.userId, data.otherId, data.otherId, data.userId).toArray().reverse();
+      this.sql.exec("UPDATE dm_messages SET read_at=? WHERE sender_id=? AND recipient_id=? AND read_at=0", Date.now(), data.otherId, data.userId);
+      return json({ other, messages });
+    }
+    if (path === "/community/dm-send") {
+      const text = typeof data.text === "string" ? data.text.trim().slice(0, 1000) : "";
+      const recipient = one("SELECT id FROM users WHERE id=? AND banned=0", data.recipientId);
+      if (!recipient || recipient.id === data.userId) return json({ error: "Empfänger ungültig." }, 400);
+      if (!text) return json({ error: "Nachricht darf nicht leer sein." }, 400);
+      const id = crypto.randomUUID(), now = Date.now();
+      this.sql.exec("INSERT INTO dm_messages (id,sender_id,recipient_id,text,created_at) VALUES (?,?,?,?,?)", id, data.userId, data.recipientId, text, now);
+      this.sql.exec("INSERT INTO notifications (id,user_id,kind,text,created_at) VALUES (?,?,?,?,?)", crypto.randomUUID(), data.recipientId, "dm", "Neue private Nachricht", now);
+      return json({ ok: true, message: { id, senderId: data.userId, recipientId: data.recipientId, text, createdAt: now, readAt: 0 } });
+    }
+    if (path === "/community/react") {
+      const emoji = ["❤️","😂","⭐","🔥","👍","😮"].includes(data.emoji) ? data.emoji : "";
+      if (!emoji || typeof data.messageId !== "string" || data.messageId.length > 80) return json({ error: "Ungültige Reaktion." }, 400);
+      const existing = one("SELECT message_id FROM message_reactions WHERE message_id=? AND user_id=? AND emoji=?", data.messageId, data.userId, emoji);
+      if (existing) this.sql.exec("DELETE FROM message_reactions WHERE message_id=? AND user_id=? AND emoji=?", data.messageId, data.userId, emoji);
+      else this.sql.exec("INSERT INTO message_reactions (message_id,user_id,emoji,created_at) VALUES (?,?,?,?)", data.messageId, data.userId, emoji, Date.now());
+      return json({ reactions: this.sql.exec("SELECT emoji,COUNT(*) AS count FROM message_reactions WHERE message_id=? GROUP BY emoji", data.messageId).toArray() });
+    }
+    if (path === "/community/xp") {
+      const row = one("SELECT xp,level,last_xp_at AS lastXpAt FROM user_stats WHERE user_id=?", data.userId) || { xp: 0, level: 1, lastXpAt: 0 };
+      if (Date.now() - row.lastXpAt < 30000) return json({ xp: row.xp, level: row.level, gained: 0 });
+      const xp = row.xp + 5, level = Math.floor(xp / 100) + 1;
+      this.sql.exec("INSERT INTO user_stats (user_id,xp,level,last_xp_at) VALUES (?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET xp=excluded.xp,level=excluded.level,last_xp_at=excluded.last_xp_at", data.userId, xp, level, Date.now());
+      if (level > row.level) this.sql.exec("INSERT INTO notifications (id,user_id,kind,text,created_at) VALUES (?,?,?,?,?)", crypto.randomUUID(), data.userId, "level", "Du hast Level " + level + " erreicht!", Date.now());
+      return json({ xp, level, gained: 5 });
     }
     if (path === "/users") {
       const users = this.sql.exec("SELECT id,name,role,created_at AS createdAt,banned,coins FROM users ORDER BY created_at DESC").toArray();
