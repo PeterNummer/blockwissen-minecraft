@@ -28,6 +28,7 @@
       hubBody.append(list);
       if(data.unread){await api('notifications/read','POST',{});document.getElementById('notificationCount').textContent='0';}
     }else{
+      if(!currentUserId){try{const me=await fetch('/api/me',{headers:{Authorization:'Bearer '+token()}}).then(r=>r.json());currentUserId=me.user?.id||'';}catch{}}
       const [memberData,threadList]=await Promise.all([api('members'),api('dm')]);
       members=memberData.users||[];
       hubBody.replaceChildren(el('h3','','Private Nachrichten'));
