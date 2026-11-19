@@ -302,3 +302,9 @@ footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-s
 .coin-admin-controls input{width:105px;min-width:85px;padding:8px 10px;border:1px solid #465366;border-radius:8px;background:#111a26;color:#edf3fb}
 .coin-admin-controls button{padding:8px 12px;border:1px solid #8b7135;border-radius:8px;background:#40351f;color:#ffdc83;font-weight:750;cursor:pointer}
 .coin-admin-controls button:disabled{opacity:.55;cursor:wait}
+
+
+.shop-action-equip{background:#147d58!important;border-color:#24b47e!important;color:#fff!important}
+.shop-action-equip:hover{background:#0f6849!important}
+.shop-action-unequip{background:#a93242!important;border-color:#e05262!important;color:#fff!important}
+.shop-action-unequip:hover{background:#872735!important}
