@@ -376,11 +376,12 @@ ownerRecoveryForm.addEventListener('submit', async event => {
       password: document.getElementById('recoveryPassword').value,
       recoveryCode: document.getElementById('recoveryCode').value
     });
+    const recoveredName = document.getElementById('recoveryName').value.trim();
     ownerRecoveryForm.reset();
     ownerRecoveryForm.hidden = true;
     chatLoginForm.hidden = false;
     setAuthMode('login');
-    chatNameInput.value = document.getElementById('recoveryName').value.trim();
+    chatNameInput.value = recoveredName;
     chatLoginFeedback.textContent = result.message || 'Passwort zurückgesetzt. Bitte anmelden.';
   } catch (error) {
     chatLoginFeedback.textContent = error.message;
