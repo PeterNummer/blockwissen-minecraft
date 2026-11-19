@@ -44,14 +44,20 @@ export default {
     }
 
     if (url.pathname === "/api/register" && request.method === "POST") {
-      const data = await readBody(request);
-      if (!validName(data.name) || !validPassword(data.password) || typeof data.inviteCode !== "string") return json({ error: "Bitte gültigen Benutzernamen, Passwort (mindestens 8 Zeichen) und Registrierungscode eingeben." }, 400);
-      const isOwner = !!env.OWNER_REGISTRATION_CODE && data.inviteCode === env.OWNER_REGISTRATION_CODE;
-      if (!isOwner && (!env.REGISTRATION_CODE || data.inviteCode !== env.REGISTRATION_CODE)) return json({ error: "Der Registrierungscode ist falsch." }, 403);
-      const salt = randomToken();
-      const passHash = await passwordHash(data.password, salt);
-      const response = await storeCall(env, "/register", { name: data.name, salt, passHash, role: isOwner ? "owner" : "member" });
-      return new Response(response.body, { status: response.status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
+      try {
+        const data = await readBody(request);
+        if (!validName(data.name) || !validPassword(data.password) || typeof data.inviteCode !== "string") return json({ error: "Bitte gültigen Benutzernamen, Passwort (mindestens 8 Zeichen) und Registrierungscode eingeben." }, 400);
+        const isOwner = !!env.OWNER_REGISTRATION_CODE && data.inviteCode === env.OWNER_REGISTRATION_CODE;
+        if (!isOwner && (!env.REGISTRATION_CODE || data.inviteCode !== env.REGISTRATION_CODE)) return json({ error: "Der Registrierungscode ist falsch." }, 403);
+        const salt = randomToken();
+        const passHash = await passwordHash(data.password, salt);
+        const response = await storeCall(env, "/register", { name: data.name, salt, passHash, role: isOwner ? "owner" : "member" });
+        const responseText = await response.text();
+        return new Response(responseText, { status: response.status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
+      } catch (error) {
+        console.error("TYQORA registration failed:", error?.stack || error);
+        return json({ error: "Interner Registrierungsfehler. Bitte Cloudflare Worker Logs prüfen." }, 500);
+      }
     }
 
     if (url.pathname === "/api/login" && request.method === "POST") {
