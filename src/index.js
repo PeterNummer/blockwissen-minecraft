@@ -200,6 +200,7 @@ export class AuthStore extends DurableObject {
     try { this.sql.exec("ALTER TABLE users ADD COLUMN coins INTEGER NOT NULL DEFAULT 100"); } catch {}
     try { this.sql.exec("ALTER TABLE users ADD COLUMN equipped_item TEXT NOT NULL DEFAULT ''"); } catch {}
     try { this.sql.exec("ALTER TABLE users ADD COLUMN equipped_badge TEXT NOT NULL DEFAULT ''"); } catch {}
+    this.sql.exec("UPDATE users SET equipped_badge=equipped_item,equipped_item='' WHERE equipped_item='star_badge' AND equipped_badge=''");
   }
   async fetch(request) {
     const path = new URL(request.url).pathname;
