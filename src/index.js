@@ -46,6 +46,36 @@ function validPassword(password) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname === "/api/avatar-proxy" && request.method === "GET") {
+      const source = url.searchParams.get("url") || "";
+      let imageUrl;
+      try { imageUrl = new URL(source); } catch { return new Response("Ungültige Bildadresse.", { status: 400 }); }
+      if (imageUrl.protocol !== "https:" || imageUrl.hostname !== "ugc.production.linktr.ee" || imageUrl.username || imageUrl.password) {
+        return new Response("Bildquelle nicht erlaubt.", { status: 403 });
+      }
+      try {
+        const imageResponse = await fetch(imageUrl.href, {
+          headers: { Accept: "image/avif,image/webp,image/png,image/jpeg,image/*;q=0.8" },
+          redirect: "follow"
+        });
+        const contentType = imageResponse.headers.get("Content-Type") || "";
+        const length = Number(imageResponse.headers.get("Content-Length") || 0);
+        if (!imageResponse.ok || !contentType.toLowerCase().startsWith("image/")) return new Response("Bildquelle liefert keine Bilddatei.", { status: 502 });
+        if (length > 5 * 1024 * 1024) return new Response("Bild ist zu groß (maximal 5 MB).", { status: 413 });
+        const bytes = await imageResponse.arrayBuffer();
+        if (bytes.byteLength > 5 * 1024 * 1024) return new Response("Bild ist zu groß (maximal 5 MB).", { status: 413 });
+        return new Response(bytes, { headers: {
+          "Content-Type": contentType,
+          "Content-Length": String(bytes.byteLength),
+          "Cache-Control": "public, max-age=3600",
+          "X-Content-Type-Options": "nosniff"
+        }});
+      } catch (error) {
+        console.error("TYQORA avatar proxy failed:", error);
+        return new Response("Bild konnte nicht vom Bildserver geladen werden.", { status: 502 });
+      }
+    }
+
     if (url.pathname.startsWith("/api/") && request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: { "Access-Control-Allow-Origin": url.origin, "Access-Control-Allow-Methods": "GET,POST", "Access-Control-Allow-Headers": "Content-Type", "Vary": "Origin" } });
     }
