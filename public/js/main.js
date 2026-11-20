@@ -734,3 +734,14 @@ resetAccountsForm.addEventListener('submit', async event => {
 });
 
 restoreSession();
+
+
+// Live-Suche für die Guide-Karten
+const guideSearchInput=document.getElementById('guideSearch');
+guideSearchInput?.addEventListener('input',()=>{
+ const query=guideSearchInput.value.trim().toLocaleLowerCase('de');
+ document.querySelectorAll('#guideGrid [data-guide]').forEach(card=>{
+   const haystack=(card.innerText+' '+card.dataset.guide).toLocaleLowerCase('de');
+   card.hidden=!haystack.includes(query);
+ });
+});
