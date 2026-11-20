@@ -32,7 +32,7 @@
         const member=onlineUsers.find(item=>item.id===user.id);
         const button=el('button','dm-sidebar-user'+(selectedDm===user.id?' active':''),'');
         button.type='button';
-        button.append(el('span','dm-sidebar-status',member?.isOnline?'●':'○'),el('span','dm-sidebar-name',member?.name||user.name||'Mitglied'));
+        button.append(el('span','dm-sidebar-status'+(member?.isOnline?' online':''),member?.isOnline?'●':'○'),el('span','dm-sidebar-name',member?.name||user.name||'Mitglied'));
         button.title='Privaten Chat mit '+(member?.name||user.name||'Mitglied')+' öffnen';
         button.addEventListener('click',()=>{selectedDm=user.id;openHub('dms');});
         list.append(button);
@@ -112,6 +112,7 @@
   }
   refreshNotificationCount();window.setInterval(refreshNotificationCount,30000);
   renderSidebarDMs();window.setInterval(renderSidebarDMs,20000);
+  window.addEventListener('tyqora:authenticated',renderSidebarDMs);
   function paintReactions(container,reactions){
     container.replaceChildren();
     (reactions||[]).forEach(item=>{const b=el('button','',item.emoji+' '+item.count);b.type='button';b.title='Reaktion hinzufügen oder entfernen';b.addEventListener('click',async()=>{try{const r=await api('react','POST',{messageId:container.dataset.messageId,emoji:item.emoji});paintReactions(container,r.reactions);}catch{}});container.append(b);});
