@@ -374,3 +374,21 @@ footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-s
 .profile-progress-track{height:8px;margin-top:8px;background:#303c4b;border-radius:9px;overflow:hidden}
 .profile-progress-track span{display:block;height:100%;background:linear-gradient(90deg,#61c98a,#b4f27b)}
 @media(max-width:520px){.community-dialog{padding:20px 15px}.community-form{flex-direction:column}.chat-top-actions .chat-refresh{font-size:.68rem;padding:5px 7px}}
+
+
+/* Private Chats direkt in der linken TYQORA-Seitenleiste */
+.dm-sidebar-section{margin-top:20px;padding-top:14px;border-top:1px solid #ffffff12;min-height:0}
+.dm-sidebar-section[hidden]{display:none}
+.dm-sidebar-new{display:block;width:100%;margin:7px 0 9px;padding:9px 10px;border:1px dashed #52647b;border-radius:9px;background:#202d3d;color:#cfe2fa;text-align:left;font:inherit;font-size:.8rem;font-weight:750;cursor:pointer}
+.dm-sidebar-new:hover{background:#2b4058;border-color:#7da6d4}
+.dm-sidebar-list{display:grid;gap:4px;max-height:220px;overflow-y:auto}
+.dm-sidebar-user{display:flex;align-items:center;gap:9px;width:100%;min-width:0;padding:9px 10px;border:1px solid transparent;border-radius:8px;background:transparent;color:#dce4ef;text-align:left;font:inherit;font-size:.82rem;cursor:pointer}
+.dm-sidebar-user:hover,.dm-sidebar-user.active{background:#263445;border-color:#3d5875;color:#fff}
+.dm-sidebar-status{flex:0 0 auto;color:#788493;font-size:.68rem}
+.dm-sidebar-user:has(.dm-sidebar-status:first-child){ }
+.dm-sidebar-user .dm-sidebar-status{color:#7d8999}
+.dm-sidebar-user .dm-sidebar-status.online{color:#72dc8a}
+.dm-sidebar-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dm-sidebar-empty{padding:7px 10px;color:#8995a5;font-size:.76rem}
+.chat-side{overflow-y:auto;overscroll-behavior:contain}
+.chat-side-bottom{margin-top:18px}
