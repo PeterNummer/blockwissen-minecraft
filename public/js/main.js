@@ -149,6 +149,17 @@ function showAccount() {
   document.getElementById('coinBalance').textContent = '🪙 ' + Number(chatUser.coins ?? shopState.coins ?? 100) + ' Coins';
   openAdminButton.hidden = chatUser.role !== 'owner';
 }
+function renderMentionText(container,text){
+  container.replaceChildren();
+  const pattern=/(@[\\p{L}\\p{N}_-]{3,24})/gu;
+  let last=0,match;
+  while((match=pattern.exec(text))){
+    if(match.index>last)container.append(document.createTextNode(text.slice(last,match.index)));
+    const tag=document.createElement('span');tag.className='chat-mention';tag.textContent=match[0];container.append(tag);
+    last=pattern.lastIndex;
+  }
+  if(last<text.length)container.append(document.createTextNode(text.slice(last)));
+}
 function renderChatMessage(message) {
   const row = document.createElement('article');
   row.className = 'chat-message';
@@ -180,7 +191,7 @@ function renderChatMessage(message) {
   time.textContent = new Date(message.time).toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
   const body = document.createElement('p');
   body.className = 'chat-message-body';
-  body.textContent = message.text || '';
+  renderMentionText(body, message.text || '');
   if (message.editedAt) {
     const edited = document.createElement('span');
     edited.className = 'message-edited';
@@ -528,12 +539,108 @@ chatLoginForm.addEventListener('submit', async event => {
     chatLoginButton.disabled = false;
   }
 });
+const chatSuggestBox=document.createElement('div');
+chatSuggestBox.className='chat-suggestions';
+chatSuggestBox.hidden=true;
+chatMessageForm.append(chatSuggestBox);
+let mentionMembers=[],suggestionItems=[],suggestionIndex=0;
+const commandCatalog=[
+  {name:'help',usage:'/help',description:'Zeigt alle verfügbaren TYQORA-Befehle.'},
+  {name:'me',usage:'/me <aktion>',description:'Zeigt eine Aktion mit deinem Namen an.'},
+  {name:'roll',usage:'/roll',description:'Würfelt eine zufällige Zahl von 1 bis 100.'},
+  {name:'shrug',usage:'/shrug <text>',description:'Sendet deinen Text mit ¯\\_(ツ)_/¯.'},
+  {name:'time',usage:'/time',description:'Zeigt die aktuelle lokale Uhrzeit.'},
+  {name:'about',usage:'/about',description:'Zeigt Informationen über den TYQORA-Bot.'}
+];
+function addBotReply(text){
+  const row=document.createElement('div');row.className='chat-message bot-message';
+  const meta=document.createElement('div');meta.className='chat-message-meta';
+  const name=document.createElement('strong');name.className='bot-name';name.textContent='TYQORA BOT';
+  const time=document.createElement('time');time.textContent=new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+  meta.append(name,time);
+  const body=document.createElement('p');body.className='chat-message-body';body.textContent=text;
+  row.append(meta,body);chatMessages.append(row);chatMessages.scrollTop=chatMessages.scrollHeight;
+}
+function runChatCommand(raw){
+  const [command,...parts]=raw.slice(1).split(' ');
+  const args=parts.join(' ').trim();
+  switch((command||'').toLowerCase()){
+    case 'help': addBotReply('Verfügbare Befehle:\n'+commandCatalog.map(c=>c.usage+' — '+c.description).join('\n'));break;
+    case 'me': if(!args)addBotReply('Verwendung: /me <aktion>');else addBotReply('* '+(chatUser?.name||'Du')+' '+args);break;
+    case 'roll': addBotReply('🎲 '+(chatUser?.name||'Du')+' würfelt: '+(Math.floor(Math.random()*100)+1));break;
+    case 'shrug': addBotReply((args?args+' ':'')+'¯\\_(ツ)_/¯');break;
+    case 'time': addBotReply('🕒 Lokale Uhrzeit: '+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}));break;
+    case 'about': addBotReply('Ich bin der TYQORA-Bot. Mit /help siehst du alle verfügbaren Befehle.');break;
+    default: addBotReply('Unbekannter Befehl: /'+command+'. Tippe /help für die Befehlsliste.');
+  }
+}
+function hideSuggestions(){chatSuggestBox.hidden=true;chatSuggestBox.replaceChildren();suggestionItems=[];suggestionIndex=0;}
+function showSuggestions(items,kind){
+  suggestionItems=items;suggestionIndex=0;chatSuggestBox.replaceChildren();
+  if(!items.length){hideSuggestions();return;}
+  items.forEach((item,index)=>{
+    const button=document.createElement('button');button.type='button';button.className='chat-suggestion'+(index===0?' active':'');
+    const title=document.createElement('strong');title.textContent=kind==='command'?item.usage:'@'+item.name;
+    const detail=document.createElement('span');detail.textContent=kind==='command'?item.description:(item.role||'Mitglied');
+    button.append(title,detail);
+    button.addEventListener('mousedown',event=>event.preventDefault());
+    button.addEventListener('click',()=>chooseSuggestion(item,kind));
+    chatSuggestBox.append(button);
+  });
+  chatSuggestBox.hidden=false;
+}
+function chooseSuggestion(item,kind){
+  const value=chatMessageInput.value;
+  if(kind==='command'){chatMessageInput.value=item.usage+' ';chatMessageInput.focus();}
+  else{
+    const match=value.match(/@([\\p{L}\\p{N}_-]*)$/u);if(!match)return;
+    chatMessageInput.value=value.slice(0,match.index)+'@'+item.name+' ';
+    chatMessageInput.focus();
+  }
+  hideSuggestions();
+}
+async function loadMentionMembers(){
+  const session=authToken||localStorage.getItem('tyqora_session')||sessionStorage.getItem('tyqora_session')||'';
+  if(!session)return;
+  try{const response=await fetch('/api/community/members',{headers:{Authorization:'Bearer '+session}});const data=await response.json();mentionMembers=data.users||[];}catch{}
+}
+function updateSuggestions(){
+  const value=chatMessageInput.value;
+  const mention=value.match(/@([\\p{L}\\p{N}_-]*)$/u);
+  if(mention){
+    const query=mention[1].toLocaleLowerCase();
+    const matches=mentionMembers.filter(user=>user.name.toLocaleLowerCase().startsWith(query)).slice(0,8);
+    showSuggestions(matches,'mention');return;
+  }
+  const command=value.match(/^\\/([a-z]*)$/i);
+  if(command){
+    const query=command[1].toLowerCase();
+    showSuggestions(commandCatalog.filter(item=>item.name.startsWith(query)),'command');return;
+  }
+  hideSuggestions();
+}
+chatMessageInput.addEventListener('input',updateSuggestions);
+chatMessageInput.addEventListener('keydown',event=>{
+  if(chatSuggestBox.hidden)return;
+  if(event.key==='ArrowDown'||event.key==='ArrowUp'){
+    event.preventDefault();suggestionIndex=(suggestionIndex+(event.key==='ArrowDown'?1:-1)+suggestionItems.length)%suggestionItems.length;
+    [...chatSuggestBox.children].forEach((node,index)=>node.classList.toggle('active',index===suggestionIndex));
+  }else if(event.key==='Enter'&&suggestionItems.length){
+    event.preventDefault();const value=suggestionItems[suggestionIndex];chooseSuggestion(value,chatMessageInput.value.startsWith('/')?'command':'mention');
+  }else if(event.key==='Escape')hideSuggestions();
+});
+loadMentionMembers();
+window.addEventListener('tyqora:authenticated',loadMentionMembers);
+const previousChannelButtons=channelButtons;
+previousChannelButtons.forEach(button=>button.addEventListener('click',()=>hideSuggestions()));
 chatMessageForm.addEventListener('submit', event => {
   event.preventDefault();
   const text = chatMessageInput.value.trim();
   if (!text || !chatAuthenticated || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+  if(text.startsWith('/')){runChatCommand(text);chatMessageInput.value='';hideSuggestions();chatMessageInput.focus();return;}
   chatSocket.send(JSON.stringify({type:'message', text}));
   chatMessageInput.value = '';
+  hideSuggestions();
   chatMessageInput.focus();
 });
 channelButtons.forEach(button => button.addEventListener('click', () => {
