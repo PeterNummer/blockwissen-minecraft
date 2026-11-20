@@ -4,6 +4,15 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Vorhandener Release-Tag, z. B. v1.0.2"
+        required: true
+        type: string
+
+env:
+  APP_TAG: ${{ inputs.tag || github.ref_name }}
 
 permissions:
   contents: write
@@ -23,11 +32,14 @@ jobs:
         run: npm install
       - name: Versionsnummer aus Git-Tag übernehmen
         shell: bash
-        run: npm version --no-git-tag-version --allow-same-version "${GITHUB_REF_NAME#v}"
-      - name: Windows-App bauen und Release veröffentlichen
+        run: npm version --no-git-tag-version --allow-same-version "${APP_TAG#v}"
+      - name: Windows-App bauen
+        run: npx electron-builder --win nsis --publish never
+      - name: Windows-Installer an vorhandenes GitHub Release anhängen
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder --win nsis --publish always
+        shell: bash
+        run: gh release upload "$APP_TAG" dist/*.exe dist/*.blockmap dist/latest.yml --clobber
 
   android:
     needs: windows
@@ -53,7 +65,7 @@ jobs:
         run: npm install
       - name: Versionsnummer aus Git-Tag übernehmen
         shell: bash
-        run: npm version --no-git-tag-version --allow-same-version "${GITHUB_REF_NAME#v}"
+        run: npm version --no-git-tag-version --allow-same-version "${APP_TAG#v}"
       - name: Android-Projekt erzeugen
         run: |
           mkdir -p android-web
@@ -84,7 +96,7 @@ jobs:
       - name: APK als Build-Artefakt bereitstellen
         uses: actions/upload-artifact@v4
         with:
-          name: Blockwissen-Minecraft-Android-Test-${{ github.ref_name }}
+          name: Blockwissen-Minecraft-Android-Test-${{ env.APP_TAG }}
           path: android/app/build/outputs/apk/debug/app-debug.apk
       - name: Prüfen, ob ein Android-Release-Schlüssel eingerichtet ist
         id: signing
@@ -112,4 +124,4 @@ jobs:
         if: ${{ steps.signing.outputs.available == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${GITHUB_REF_NAME}" Blockwissen-Minecraft-Android.apk --clobber
+        run: gh release upload "$APP_TAG" Blockwissen-Minecraft-Android.apk --clobber
