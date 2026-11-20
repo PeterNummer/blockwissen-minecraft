@@ -30,6 +30,7 @@ jobs:
         run: npx electron-builder --win nsis --publish always
 
   android:
+    needs: windows
     name: Android-App
     runs-on: ubuntu-latest
     steps:
@@ -67,6 +68,12 @@ jobs:
           source, count = re.subn(r'versionName\s+["\'][^"\']+["\']', f'versionName "{version}"', source, count=1)
           if count == 0:
               raise SystemExit("versionName in android/app/build.gradle nicht gefunden")
+          parts = [int(x) for x in version.split(".")[:3]]
+          parts += [0] * (3 - len(parts))
+          version_code = parts[0] * 1000000 + parts[1] * 1000 + parts[2]
+          source, count = re.subn(r'versionCode\s+\d+', f'versionCode {version_code}', source, count=1)
+          if count == 0:
+              raise SystemExit("versionCode in android/app/build.gradle nicht gefunden")
           path.write_text(source)
           PY
       - name: APK bauen
