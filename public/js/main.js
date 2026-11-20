@@ -207,7 +207,7 @@ function renderChatMessage(message) {
   }
   meta.append(time);
   row.append(meta, body);
-  if (!message.bot && ["owner","admin","moderator"].includes(chatUser?.role)) {
+  if (["owner","admin","moderator"].includes(chatUser?.role)) {
     const menuWrap = document.createElement('div');
     menuWrap.className = 'message-menu-wrap';
     const menuButton = document.createElement('button');
@@ -219,7 +219,7 @@ function renderChatMessage(message) {
     const menu = document.createElement('div');
     menu.className = 'message-menu';
     menu.hidden = true;
-    if (chatUser.role === 'owner') {
+    if (chatUser.role === 'owner' && !message.bot) {
       const edit = document.createElement('button');
       edit.type = 'button';
       edit.textContent = 'Bearbeiten';
