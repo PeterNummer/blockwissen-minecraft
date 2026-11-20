@@ -540,3 +540,61 @@ header nav .nav-community:hover{
   header nav a{min-height:36px;padding:7px 10px;font-size:.76rem}
   header nav .nav-community{margin-left:2px}
 }
+
+
+/* Korrektur: Logo steht immer oberhalb der Navigation */
+header.wrap{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  min-height:0;
+  height:auto;
+  padding:12px 16px 13px;
+}
+header.wrap .brand{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex:none;
+  width:auto;
+  padding:2px 0;
+}
+header.wrap nav{
+  display:flex;
+  flex:0 1 auto;
+  width:max-content;
+  max-width:100%;
+  justify-content:center;
+  align-items:center;
+  overflow-x:auto;
+  scrollbar-width:none;
+}
+header.wrap nav::-webkit-scrollbar{display:none}
+@media(max-width:760px){
+  header.wrap{
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+    padding:10px 12px 11px;
+  }
+  header.wrap .brand{width:auto}
+  header.wrap nav{
+    width:100%;
+    flex:0 1 auto;
+    justify-content:flex-start;
+  }
+}
+@media(max-width:480px){
+  header.wrap{
+    flex-direction:column;
+    align-items:center;
+    min-height:0;
+    height:auto;
+    gap:8px;
+    padding:9px 10px 10px;
+  }
+  header.wrap .brand{width:auto;padding:1px 0}
+  header.wrap nav{width:100%;flex:0 1 auto;justify-content:flex-start}
+}
