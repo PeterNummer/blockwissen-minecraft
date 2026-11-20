@@ -538,7 +538,7 @@ export class ChatRoom extends DurableObject {
     if (data.type === "command") {
       if (typeof data.text !== "string") return;
       const input = data.text.trim().slice(0, 300);
-      const match = input.match(/^\\/([a-z]+)(?:\\s+([\\s\\S]*))?$/i);
+      const match = input.match(/^\/([a-z]+)(?:\s+([\s\S]*))?$/i);
       if (!match) { ws.send(JSON.stringify({ type: "notice", message: "Ungültiger Befehl. Tippe /help für die Übersicht." })); return; }
       const command = match[1].toLowerCase();
       const args = (match[2] || "").trim();
@@ -556,7 +556,7 @@ export class ChatRoom extends DurableObject {
         "/shrug <text> — Ergänzt deinen Text um ¯\\_(ツ)_/¯.",
         "/time — Zeigt die Uhrzeit in Deutschland.",
         "/about — Zeigt das Bot-Profil und seine Funktionen."
-      ].join("\\n");
+      ].join("\n");
       let reply;
       switch (command) {
         case "help": reply = help; break;
@@ -564,7 +564,7 @@ export class ChatRoom extends DurableObject {
         case "roll": reply = "🎲 " + attachment.name + " würfelt: " + (Math.floor(Math.random() * 100) + 1); break;
         case "shrug": reply = (args ? args + " " : "") + "¯\\_(ツ)_/¯"; break;
         case "time": reply = "🕒 Uhrzeit in Deutschland: " + new Date().toLocaleTimeString("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" }); break;
-        case "about": reply = "🤖 TYQORA BOT\\nOffizieller Chat-Bot für Blockwissen / TYQORA.\\nIch kann Befehle ausführen und dir mit /help die komplette Liste anzeigen. Bot-Nachrichten werden für alle im aktuellen Kanal gespeichert und live angezeigt."; break;
+        case "about": reply = "🤖 TYQORA BOT\nOffizieller Chat-Bot für Blockwissen / TYQORA.\nIch kann Befehle ausführen und dir mit /help die komplette Liste anzeigen. Bot-Nachrichten werden für alle im aktuellen Kanal gespeichert und live angezeigt."; break;
         default: reply = "Unbekannter Befehl: /" + command + ". Tippe /help für alle verfügbaren Befehle.";
       }
       const botMessage = { id: crypto.randomUUID(), userId: "tyqora-bot", name: "TYQORA BOT", role: "bot", bot: true, text: reply.slice(0, 1000), time: now };
