@@ -1,0 +1,63 @@
+name: Blockwissen Apps bauen
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    name: Windows-App
+    runs-on: windows-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+      - name: Node.js einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Abhängigkeiten installieren
+        run: npm install
+      - name: Windows-App bauen und Release veröffentlichen
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --win nsis --publish always
+
+  android:
+    name: Android-App
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+      - name: Java einrichten
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Android SDK einrichten
+        uses: android-actions/setup-android@v3
+      - name: Node.js einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Abhängigkeiten installieren
+        run: npm install
+      - name: Android-Projekt erzeugen
+        run: |
+          mkdir -p android-web
+          npx cap add android
+          mkdir -p android/app/src/main/java/de/blockwissen/minecraft
+          cp android/MainActivity.java android/app/src/main/java/de/blockwissen/minecraft/MainActivity.java
+          sed -i "s/versionName \"1.0.0\"/versionName \"${GITHUB_REF_NAME#v}\"/" android/app/build.gradle
+      - name: APK bauen
+        working-directory: android
+        run: ./gradlew assembleDebug
+      - name: APK als Build-Artefakt bereitstellen
+        uses: actions/upload-artifact@v4
+        with:
+          name: Blockwissen-Minecraft-Android-${{ github.ref_name }}
+          path: android/app/build/outputs/apk/debug/app-debug.apk
