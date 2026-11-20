@@ -535,6 +535,44 @@ export class ChatRoom extends DurableObject {
       broadcast({ type: "message_update", message: history[index] });
       return;
     }
+    if (data.type === "command") {
+      if (typeof data.text !== "string") return;
+      const input = data.text.trim().slice(0, 300);
+      const match = input.match(/^\\/([a-z]+)(?:\\s+([\\s\\S]*))?$/i);
+      if (!match) { ws.send(JSON.stringify({ type: "notice", message: "Ungültiger Befehl. Tippe /help für die Übersicht." })); return; }
+      const command = match[1].toLowerCase();
+      const args = (match[2] || "").trim();
+      const now = Date.now();
+      if (attachment.lastMessageAt && now - attachment.lastMessageAt < 700) {
+        ws.send(JSON.stringify({ type: "notice", message: "Bitte warte kurz vor dem nächsten Befehl." }));
+        return;
+      }
+      ws.serializeAttachment({ ...attachment, lastMessageAt: now });
+      const help = [
+        "TYQORA BOT — BEFEHLSÜBERSICHT",
+        "/help — Zeigt diese Befehlsübersicht.",
+        "/me <aktion> — Teilt eine Aktion mit deinem Namen.",
+        "/roll — Würfelt eine Zahl von 1 bis 100.",
+        "/shrug <text> — Ergänzt deinen Text um ¯\\_(ツ)_/¯.",
+        "/time — Zeigt die Uhrzeit in Deutschland.",
+        "/about — Zeigt das Bot-Profil und seine Funktionen."
+      ].join("\\n");
+      let reply;
+      switch (command) {
+        case "help": reply = help; break;
+        case "me": reply = args ? "* " + attachment.name + " " + args : "Verwendung: /me <aktion>"; break;
+        case "roll": reply = "🎲 " + attachment.name + " würfelt: " + (Math.floor(Math.random() * 100) + 1); break;
+        case "shrug": reply = (args ? args + " " : "") + "¯\\_(ツ)_/¯"; break;
+        case "time": reply = "🕒 Uhrzeit in Deutschland: " + new Date().toLocaleTimeString("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" }); break;
+        case "about": reply = "🤖 TYQORA BOT\\nOffizieller Chat-Bot für Blockwissen / TYQORA.\\nIch kann Befehle ausführen und dir mit /help die komplette Liste anzeigen. Bot-Nachrichten werden für alle im aktuellen Kanal gespeichert und live angezeigt."; break;
+        default: reply = "Unbekannter Befehl: /" + command + ". Tippe /help für alle verfügbaren Befehle.";
+      }
+      const botMessage = { id: crypto.randomUUID(), userId: "tyqora-bot", name: "TYQORA BOT", role: "bot", bot: true, text: reply.slice(0, 1000), time: now };
+      history.push(botMessage);
+      await this.ctx.storage.put("history", history.slice(-100));
+      broadcast({ type: "message", message: botMessage });
+      return;
+    }
     if (data.type !== "message" || typeof data.text !== "string") return;
     const text = data.text.trim().slice(0, 1000);
     if (!text) return;
