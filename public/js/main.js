@@ -71,6 +71,7 @@ const chatLoginFeedback = document.getElementById('chatLoginFeedback');
 const chatMessages = document.getElementById('chatMessages');
 const chatMessageForm = document.getElementById('chatMessageForm');
 const chatMessageInput = document.getElementById('chatMessageInput');
+const chatCommandsButton = document.getElementById('chatCommandsButton');
 const chatNameInput = document.getElementById('chatName');
 const chatPasswordInput = document.getElementById('chatPassword');
 const chatInviteCode = document.getElementById('chatInviteCode');
@@ -608,6 +609,7 @@ function updateSuggestions(){
   hideSuggestions();
 }
 chatMessageInput.addEventListener('input',updateSuggestions);
+chatCommandsButton?.addEventListener('click',()=>{chatMessageInput.value='/';chatMessageInput.focus();updateSuggestions();});
 chatMessageInput.addEventListener('keydown',event=>{
   if(chatSuggestBox.hidden)return;
   if(event.key==='ArrowDown'||event.key==='ArrowUp'){
