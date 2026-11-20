@@ -54,6 +54,7 @@ jobs:
       - name: Android-Projekt erzeugen
         run: |
           mkdir -p android-web
+          printf '<!doctype html><html><head><meta charset="utf-8"></head><body>Blockwissen Minecraft</body></html>' > android-web/index.html
           npx cap add android
           mkdir -p android/app/src/main/java/de/blockwissen/minecraft
           cp android-template/MainActivity.java android/app/src/main/java/de/blockwissen/minecraft/MainActivity.java
