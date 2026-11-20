@@ -162,7 +162,7 @@ function renderMentionText(container,text){
 }
 function renderChatMessage(message) {
   const row = document.createElement('article');
-  row.className = 'chat-message';
+  row.className = 'chat-message' + (message.bot ? ' bot-message' : '');
   row.dataset.messageId = message.id;
   if (message.userId) row.dataset.userId = message.userId;
   const meta = document.createElement('div');
@@ -180,7 +180,13 @@ function renderChatMessage(message) {
     badge.title = badgeCosmetic.name;
     meta.append(badge);
   }
-  if (message.role) {
+  if (message.bot) {
+    const verified = document.createElement('span');
+    verified.className = 'bot-verified';
+    verified.textContent = '✓ BOT';
+    verified.title = 'Offizieller TYQORA-Systembot';
+    meta.append(verified);
+  } else if (message.role) {
     const role = document.createElement('span');
     role.className = 'message-role role-' + message.role;
     role.textContent = ({owner:'OWNER',admin:'ADMIN',moderator:'MOD',member:''})[message.role] || '';
@@ -200,7 +206,7 @@ function renderChatMessage(message) {
   }
   meta.append(time);
   row.append(meta, body);
-  if (["owner","admin","moderator"].includes(chatUser?.role)) {
+  if (!message.bot && ["owner","admin","moderator"].includes(chatUser?.role)) {
     const menuWrap = document.createElement('div');
     menuWrap.className = 'message-menu-wrap';
     const menuButton = document.createElement('button');
@@ -545,34 +551,16 @@ chatSuggestBox.hidden=true;
 chatMessageForm.append(chatSuggestBox);
 let mentionMembers=[],suggestionItems=[],suggestionIndex=0;
 const commandCatalog=[
-  {name:'help',usage:'/help',description:'Zeigt alle verfügbaren TYQORA-Befehle.'},
-  {name:'me',usage:'/me <aktion>',description:'Zeigt eine Aktion mit deinem Namen an.'},
+  {name:'help',usage:'/help',description:'Öffnet die vollständige Befehlsübersicht.'},
+  {name:'me',usage:'/me <aktion>',description:'Teilt eine Aktion mit deinem Benutzernamen.'},
   {name:'roll',usage:'/roll',description:'Würfelt eine zufällige Zahl von 1 bis 100.'},
-  {name:'shrug',usage:'/shrug <text>',description:'Sendet deinen Text mit ¯\\_(ツ)_/¯.'},
-  {name:'time',usage:'/time',description:'Zeigt die aktuelle lokale Uhrzeit.'},
-  {name:'about',usage:'/about',description:'Zeigt Informationen über den TYQORA-Bot.'}
+  {name:'shrug',usage:'/shrug <text>',description:'Hängt das Schulterzucken an deinen Text.'},
+  {name:'time',usage:'/time',description:'Zeigt die aktuelle Uhrzeit in Deutschland.'},
+  {name:'about',usage:'/about',description:'Zeigt das Bot-Profil und seine Funktionen.'}
 ];
-function addBotReply(text){
-  const row=document.createElement('div');row.className='chat-message bot-message';
-  const meta=document.createElement('div');meta.className='chat-message-meta';
-  const name=document.createElement('strong');name.className='bot-name';name.textContent='TYQORA BOT';
-  const time=document.createElement('time');time.textContent=new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
-  meta.append(name,time);
-  const body=document.createElement('p');body.className='chat-message-body';body.textContent=text;
-  row.append(meta,body);chatMessages.append(row);chatMessages.scrollTop=chatMessages.scrollHeight;
-}
 function runChatCommand(raw){
-  const [command,...parts]=raw.slice(1).split(' ');
-  const args=parts.join(' ').trim();
-  switch((command||'').toLowerCase()){
-    case 'help': addBotReply('Verfügbare Befehle:\n'+commandCatalog.map(c=>c.usage+' — '+c.description).join('\n'));break;
-    case 'me': if(!args)addBotReply('Verwendung: /me <aktion>');else addBotReply('* '+(chatUser?.name||'Du')+' '+args);break;
-    case 'roll': addBotReply('🎲 '+(chatUser?.name||'Du')+' würfelt: '+(Math.floor(Math.random()*100)+1));break;
-    case 'shrug': addBotReply((args?args+' ':'')+'¯\\_(ツ)_/¯');break;
-    case 'time': addBotReply('🕒 Lokale Uhrzeit: '+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}));break;
-    case 'about': addBotReply('Ich bin der TYQORA-Bot. Mit /help siehst du alle verfügbaren Befehle.');break;
-    default: addBotReply('Unbekannter Befehl: /'+command+'. Tippe /help für die Befehlsliste.');
-  }
+  if(!chatSocket||chatSocket.readyState!==WebSocket.OPEN)return;
+  chatSocket.send(JSON.stringify({type:'command',text:raw}));
 }
 function hideSuggestions(){chatSuggestBox.hidden=true;chatSuggestBox.replaceChildren();suggestionItems=[];suggestionIndex=0;}
 function showSuggestions(items,kind){
