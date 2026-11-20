@@ -10,20 +10,46 @@
   },
   "devDependencies": {
     "electron": "^39.2.7",
-    "electron-builder": "^26.0.12"
+    "electron-builder": "^26.0.12",
+    "@capacitor/cli": "^7.4.3"
   },
   "build": {
     "appId": "de.blockwissen.minecraft",
     "productName": "Blockwissen Minecraft",
-    "directories": { "output": "dist" },
-    "files": ["electron/**/*", "package.json"],
-    "publish": [{ "provider": "github", "owner": "PeterNummer", "repo": "blockwissen-minecraft" }],
-    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }] },
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      "package.json"
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "PeterNummer",
+        "repo": "blockwissen-minecraft"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
     }
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.4.3",
+    "@capacitor/core": "^7.4.3",
+    "electron-updater": "^6.6.2"
   }
 }
