@@ -151,7 +151,7 @@ function showAccount() {
 }
 function renderMentionText(container,text){
   container.replaceChildren();
-  const pattern=/(@[\\p{L}\\p{N}_-]{3,24})/gu;
+  const pattern=/(@[\p{L}\p{N}_-]{3,24})/gu;
   let last=0,match;
   while((match=pattern.exec(text))){
     if(match.index>last)container.append(document.createTextNode(text.slice(last,match.index)));
@@ -593,7 +593,7 @@ function chooseSuggestion(item,kind){
   const value=chatMessageInput.value;
   if(kind==='command'){chatMessageInput.value=item.usage+' ';chatMessageInput.focus();}
   else{
-    const match=value.match(/@([\\p{L}\\p{N}_-]*)$/u);if(!match)return;
+    const match=value.match(/@([\p{L}\p{N}_-]*)$/u);if(!match)return;
     chatMessageInput.value=value.slice(0,match.index)+'@'+item.name+' ';
     chatMessageInput.focus();
   }
@@ -606,13 +606,13 @@ async function loadMentionMembers(){
 }
 function updateSuggestions(){
   const value=chatMessageInput.value;
-  const mention=value.match(/@([\\p{L}\\p{N}_-]*)$/u);
+  const mention=value.match(/@([\p{L}\p{N}_-]*)$/u);
   if(mention){
     const query=mention[1].toLocaleLowerCase();
     const matches=mentionMembers.filter(user=>user.name.toLocaleLowerCase().startsWith(query)).slice(0,8);
     showSuggestions(matches,'mention');return;
   }
-  const command=value.match(/^\\/([a-z]*)$/i);
+  const command=value.match(/^\/([a-z]*)$/i);
   if(command){
     const query=command[1].toLowerCase();
     showSuggestions(commandCatalog.filter(item=>item.name.startsWith(query)),'command');return;
