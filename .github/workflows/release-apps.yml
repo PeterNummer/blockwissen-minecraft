@@ -76,7 +76,7 @@ jobs:
           python - <<'PY'
           import os, re
           from pathlib import Path
-          version = os.environ["GITHUB_REF_NAME"].lstrip("v")
+          version = os.environ["APP_TAG"].lstrip("v")
           path = Path("android/app/build.gradle")
           source = path.read_text()
           source, count = re.subn(r'versionName\s+["\'][^"\']+["\']', f'versionName "{version}"', source, count=1)
