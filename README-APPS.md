@@ -13,15 +13,44 @@ Die Android-Version wird mit Capacitor gebaut und prüft beim Start das neueste 
 
 ## Neue Version veröffentlichen
 
-1. Versionsnummer in `package.json` erhöhen.
-2. Änderungen im Branch `apps` committen.
-3. Einen Tag auf diesem Branch erstellen und pushen, zum Beispiel `v1.0.1`.
-4. GitHub Actions baut die Windows-App und Android-APK.
+1. Änderungen im Branch `apps` committen.
+2. `package.json` Versionsnummer erhöhen.
+3. Einen Tag auf dem Branch `apps` erstellen und pushen, zum Beispiel `v1.0.1`.
+4. GitHub Actions baut die Windows-App und Android-APK. Die Windows-Installationsdatei wird direkt im Release veröffentlicht.
 
-### Android-Signierung für Updates
+Das Tag muss zur Versionsnummer in `package.json` passen.
 
-Android akzeptiert Updates nur, wenn sie mit demselben Signaturschlüssel wie die installierte App signiert wurden. Vor einer öffentlichen Android-Veröffentlichung muss daher ein dauerhaft gesicherter Release-Keystore eingerichtet werden. Den privaten Keystore niemals ins Repository hochladen. Bis dahin stellt der Workflow die Android-Debug-APK als Build-Artefakt bereit; sie ist nur für Tests gedacht und nicht für nahtlose Updates über mehrere Builds hinweg geeignet.
+## Android-Signierung für automatische Updates
 
-## Hinweis
+Android akzeptiert Updates nur, wenn sie mit demselben Signaturschlüssel wie die installierte App signiert wurden. Dafür muss einmalig ein privater Release-Keystore erstellt und als GitHub Actions Secret hinterlegt werden. Den Keystore niemals ins Repository hochladen.
+
+### Keystore erstellen (einmalig)
+
+Auf einem PC mit Java:
+
+```powershell
+keytool -genkeypair -v -keystore blockwissen-release.jks -alias blockwissen -keyalg RSA -keysize 2048 -validity 10000
+```
+
+Die Datei `blockwissen-release.jks` und die dabei gewählten Passwörter sicher aufbewahren. Wenn der Schlüssel verloren geht, können bestehende Android-Installationen nicht mit einer neuen APK aktualisiert werden.
+
+Den Keystore für GitHub Base64-kodieren (PowerShell):
+
+```powershell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes(".\\blockwissen-release.jks")) | Set-Clipboard
+```
+
+Im GitHub-Repository unter **Settings → Secrets and variables → Actions → New repository secret** diese vier Secrets anlegen:
+
+- `ANDROID_KEYSTORE_BASE64` – den kopierten Base64-Inhalt
+- `ANDROID_KEYSTORE_PASSWORD` – Keystore-Passwort
+- `ANDROID_KEY_ALIAS` – `blockwissen`
+- `ANDROID_KEY_PASSWORD` – Passwort des Schlüssels
+
+Danach hängt der Workflow signierte APKs als `Blockwissen-Minecraft-Android.apk` an jedes Release an. Die Android-App kann diese Versionen dann erkennen und zum Update führen.
+
+Ohne diese vier Secrets erstellt der Workflow nur eine Android-Test-APK als Actions-Artefakt. Sie ist nicht für reguläre Updates geeignet.
+
+## Internetverbindung
 
 Die App benötigt eine Internetverbindung, weil Website, Community-Chat und Konten weiterhin vom bestehenden Cloudflare-Dienst bereitgestellt werden.
