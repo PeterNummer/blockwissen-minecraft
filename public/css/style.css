@@ -406,3 +406,9 @@ footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-s
 .bot-message .bot-name{color:#82c7ff}
 .bot-message .chat-message-body{white-space:pre-wrap}
 .chat-composer{position:relative}
+
+/* TYQORA bot identity and shared command replies */
+.bot-message{margin:8px 0;padding:12px 14px;border:1px solid #3d6286;border-left:3px solid #69bfff;border-radius:12px;background:linear-gradient(115deg,#172b40,#1a2431);box-shadow:0 5px 16px #0002}
+.bot-message .bot-name{color:#91d2ff;font-weight:900;letter-spacing:.04em}
+.bot-verified{display:inline-flex;align-items:center;gap:3px;margin-left:7px;padding:2px 6px;border-radius:5px;background:#245b86;color:#d9efff;font-size:.62rem;font-weight:900;letter-spacing:.04em}
+.bot-message .chat-message-body{color:#e4effb;line-height:1.55;white-space:pre-wrap}
