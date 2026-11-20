@@ -13,26 +13,26 @@
       const data=await api('profile'+(userId?'?id='+encodeURIComponent(userId):'')),p=data.profile;
       view.replaceChildren();
       const head=el('div','profile-head'),avatar=el('div','profile-avatar');
-      if(p.avatarUrl){const img=document.createElement('img');img.src=p.avatarUrl;img.alt='Profilbild';img.referrerPolicy='no-referrer';img.onerror=()=>{avatar.textContent=p.name.slice(0,1).toUpperCase();};avatar.append(img);}
+      if(p.avatarUrl){const img=document.createElement('img');img.src=p.avatarUrl;img.alt='Profilbild';img.loading='eager';img.decoding='async';img.onerror=()=>{img.remove();avatar.textContent=p.name.slice(0,1).toUpperCase();avatar.title='Das Profilbild konnte nicht geladen werden. Verwende einen direkten HTTPS-Bildlink.';};avatar.append(img);}
       else avatar.textContent=p.name.slice(0,1).toUpperCase();
       const title=el('div','profile-title');title.append(el('h2','',p.name),el('p','',String(p.role||'member').toUpperCase()));
       head.append(avatar,title);view.append(head,el('div','profile-bio',p.bio||'Noch keine Profilbeschreibung.'));
       const level=Number(p.level||1),xp=Number(p.xp||0),progress=xp%100;
-      const rank=level>=10?'Legende':level>=5?'Stammgast':level>=2?'Aktiv':'Neuling';
+      const isLegend=p.role==='owner'||level>=10;const rank=isLegend?'Legende':level>=5?'Stammgast':level>=2?'Aktiv':'Neuling';
       const stats=el('div','profile-progress');stats.append(el('strong','','Level '+level+' · '+rank),el('div','','XP: '+xp+' · Noch '+(100-progress)+' XP bis Level '+(level+1)));
       const track=el('div','profile-progress-track'),fill=el('span','');fill.style.width=progress+'%';track.append(fill);stats.append(track);
       const achievements=el('div','profile-stats');
-      achievements.append(el('span','',level>=2?'🏅 Aktiv dabei':'🔒 Aktiv-Level'),el('span','',level>=5?'🌟 Stammgast':'🔒 Stammgast'),el('span','',level>=10?'👑 Legende':'🔒 Legende'));
+      achievements.append(el('span','',level>=2?'🏅 Aktiv dabei':'🔒 Aktiv-Level'),el('span','',level>=5?'🌟 Stammgast':'🔒 Stammgast'),el('span','',isLegend?'👑 Legende':'🔒 Legende'));
       view.append(stats,achievements);
       if(data.own){
         const form=el('form','profile-edit'),bioLabel=el('label','','Über mich (max. 240 Zeichen)'),bio=document.createElement('textarea');
         bio.maxLength=240;bio.value=p.bio||'';
         const urlLabel=el('label','','Profilbild-URL (HTTPS, optional)'),url=document.createElement('input');
-        url.type='url';url.maxLength=500;url.placeholder='https://…';url.value=p.avatarUrl||'';
-        const save=el('button','chat-primary profile-save','Profil speichern');save.type='submit';
+        url.type='url';url.maxLength=500;url.placeholder='https://…';url.value=p.avatarUrl||'';url.autocomplete='url';
+        const preview=el('div','profile-avatar profile-avatar-preview');preview.setAttribute('aria-label','Vorschau des Profilbilds');const previewFallback=el('span','','Vorschau');preview.append(previewFallback);const previewStatus=el('small','profile-avatar-hint','Direkter HTTPS-Bildlink (JPG, PNG oder WebP).');url.addEventListener('input',()=>{preview.replaceChildren();const value=url.value.trim();if(!value){preview.append(el('span','','Vorschau'));previewStatus.textContent='Direkter HTTPS-Bildlink (JPG, PNG oder WebP).';return;}let parsed;try{parsed=new URL(value);}catch{preview.append(el('span','','?'));previewStatus.textContent='Bitte eine gültige Bild-URL eingeben.';return;}if(parsed.protocol!=='https:'){preview.append(el('span','','!'));previewStatus.textContent='Nur HTTPS-Bildlinks werden unterstützt.';return;}const image=document.createElement('img');image.alt='Profilbild-Vorschau';image.onload=()=>{previewStatus.textContent='Bildvorschau erfolgreich geladen.';};image.onerror=()=>{preview.replaceChildren(el('span','','!'));previewStatus.textContent='Bild nicht erreichbar. Verwende einen direkten Link zur Bilddatei, nicht zur Webseite.';};image.src=value;preview.append(image);});if(url.value)url.dispatchEvent(new Event('input'));const save=el('button','chat-primary profile-save','Profil speichern');save.type='submit';
         const feedback=el('p','chat-feedback','');
-        form.append(bioLabel,bio,urlLabel,url,save,feedback);
-        form.addEventListener('submit',async e=>{e.preventDefault();save.disabled=true;try{await api('profile','POST',{bio:bio.value,avatarUrl:url.value});feedback.textContent='Profil gespeichert.';await openProfile();}catch(err){feedback.textContent=err.message;save.disabled=false;}});
+        form.append(bioLabel,bio,urlLabel,url,preview,previewStatus,save,feedback);
+        form.addEventListener('submit',async e=>{e.preventDefault();save.disabled=true;try{if(url.value.trim()&&!preview.querySelector('img'))throw new Error('Das Profilbild ist nicht erreichbar. Bitte einen direkten HTTPS-Bildlink verwenden.');await api('profile','POST',{bio:bio.value,avatarUrl:url.value});feedback.textContent='Profil gespeichert.';await openProfile();}catch(err){feedback.textContent=err.message;save.disabled=false;}});
         view.append(form);
       }
     }catch(error){view.replaceChildren(el('p','chat-feedback',error.message));}
