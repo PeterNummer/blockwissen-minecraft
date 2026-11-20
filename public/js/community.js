@@ -13,6 +13,34 @@
   const el=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;};
   function openHub(tab){activeTab=tab;hub.hidden=false;document.querySelectorAll('[data-hub-tab]').forEach(b=>b.classList.toggle('active',b.dataset.hubTab===tab));renderHub().catch(showError);}
   function showError(error){hubBody.replaceChildren(el('p','chat-feedback',error.message));}
+  async function renderSidebarDMs(){
+    const section=document.getElementById('dmSidebarSection');
+    const list=document.getElementById('dmSidebarList');
+    if(!section||!list)return;
+    if(!token()){section.hidden=true;list.replaceChildren();return;}
+    try{
+      const [memberData,threadList]=await Promise.all([api('members'),api('dm')]);
+      const onlineUsers=memberData.users||[];
+      const conversations=threadList.users||[];
+      section.hidden=false;
+      list.replaceChildren();
+      if(!conversations.length){
+        list.append(el('div','dm-sidebar-empty','Noch keine Chats'));
+        return;
+      }
+      conversations.forEach(user=>{
+        const member=onlineUsers.find(item=>item.id===user.id);
+        const button=el('button','dm-sidebar-user'+(selectedDm===user.id?' active':''),'');
+        button.type='button';
+        button.append(el('span','dm-sidebar-status',member?.isOnline?'●':'○'),el('span','dm-sidebar-name',member?.name||user.name||'Mitglied'));
+        button.title='Privaten Chat mit '+(member?.name||user.name||'Mitglied')+' öffnen';
+        button.addEventListener('click',()=>{selectedDm=user.id;openHub('dms');});
+        list.append(button);
+      });
+    }catch{
+      section.hidden=!token();
+    }
+  }
   async function refreshDmThread(){
     if(hub.hidden||activeTab!=='dms'||!selectedDm)return;
     try{
@@ -65,7 +93,7 @@
         hubBody.append(messages);
         const form=el('form','community-form');const input=el('input');input.placeholder='Private Nachricht …';input.maxLength=1000;input.required=true;
         const send=el('button','','Senden');send.type='submit';form.append(input,send);
-        form.addEventListener('submit',async e=>{e.preventDefault();send.disabled=true;try{await api('dm','POST',{recipientId:selectedDm,text:input.value});input.value='';await renderHub();}catch(err){showError(err);}finally{send.disabled=false;}});
+        form.addEventListener('submit',async e=>{e.preventDefault();send.disabled=true;try{await api('dm','POST',{recipientId:selectedDm,text:input.value});input.value='';await renderHub();renderSidebarDMs();}catch(err){showError(err);}finally{send.disabled=false;}});
         hubBody.append(form);
       }
     }
@@ -74,6 +102,7 @@
   }
   document.getElementById('openNotifications')?.addEventListener('click',()=>openHub('notifications'));
   document.getElementById('openDMs')?.addEventListener('click',()=>openHub('dms'));
+  document.getElementById('dmSidebarNew')?.addEventListener('click',()=>{selectedDm='';openHub('dms');});
   document.getElementById('closeCommunity')?.addEventListener('click',()=>{hub.hidden=true;if(dmPollTimer)window.clearInterval(dmPollTimer);});
   hub.addEventListener('click',e=>{if(e.target===hub){hub.hidden=true;if(dmPollTimer)window.clearInterval(dmPollTimer);}});
   document.querySelectorAll('[data-hub-tab]').forEach(b=>b.addEventListener('click',()=>openHub(b.dataset.hubTab)));
@@ -82,6 +111,7 @@
     try{const data=await api('notifications');document.getElementById('notificationCount').textContent=String(data.unread||0);}catch{}
   }
   refreshNotificationCount();window.setInterval(refreshNotificationCount,30000);
+  renderSidebarDMs();window.setInterval(renderSidebarDMs,20000);
   function paintReactions(container,reactions){
     container.replaceChildren();
     (reactions||[]).forEach(item=>{const b=el('button','',item.emoji+' '+item.count);b.type='button';b.title='Reaktion hinzufügen oder entfernen';b.addEventListener('click',async()=>{try{const r=await api('react','POST',{messageId:container.dataset.messageId,emoji:item.emoji});paintReactions(container,r.reactions);}catch{}});container.append(b);});
