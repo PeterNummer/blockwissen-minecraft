@@ -392,3 +392,17 @@ footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-s
 .dm-sidebar-empty{padding:7px 10px;color:#8995a5;font-size:.76rem}
 .chat-side{overflow-y:auto;overscroll-behavior:contain}
 .chat-side-bottom{margin-top:18px}
+
+
+/* TYQORA mentions and slash-command bot */
+.chat-suggestions{position:absolute;z-index:30;left:18px;right:100px;bottom:calc(100% + 8px);max-height:260px;overflow:auto;padding:6px;border:1px solid #40536b;border-radius:12px;background:#151d29;box-shadow:0 14px 35px #000b}
+.chat-suggestions[hidden]{display:none}
+.chat-suggestion{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:9px 11px;border:0;border-radius:8px;background:transparent;color:#e7eef8;text-align:left;cursor:pointer}
+.chat-suggestion:hover,.chat-suggestion.active{background:#29384b}
+.chat-suggestion strong{font-size:.86rem;color:#bde4ff}
+.chat-suggestion span{font-size:.74rem;color:#9baabd;text-align:right}
+.chat-mention{display:inline-block;padding:0 3px;border-radius:4px;background:#31527a;color:#bfe0ff;font-weight:750}
+.bot-message{padding:10px 12px;border:1px solid #3b526b;border-radius:11px;background:#1a2635}
+.bot-message .bot-name{color:#82c7ff}
+.bot-message .chat-message-body{white-space:pre-wrap}
+.chat-composer{position:relative}
