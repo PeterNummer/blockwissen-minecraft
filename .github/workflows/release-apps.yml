@@ -19,9 +19,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
       - name: Abhängigkeiten installieren
         run: npm install
+      - name: Versionsnummer aus Git-Tag übernehmen
+        shell: bash
+        run: npm version --no-git-tag-version "${GITHUB_REF_NAME#v}"
       - name: Windows-App bauen und Release veröffentlichen
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -46,18 +48,52 @@ jobs:
           node-version: 22
       - name: Abhängigkeiten installieren
         run: npm install
+      - name: Versionsnummer aus Git-Tag übernehmen
+        shell: bash
+        run: npm version --no-git-tag-version "${GITHUB_REF_NAME#v}"
       - name: Android-Projekt erzeugen
         run: |
           mkdir -p android-web
           npx cap add android
           mkdir -p android/app/src/main/java/de/blockwissen/minecraft
           cp android/MainActivity.java android/app/src/main/java/de/blockwissen/minecraft/MainActivity.java
-          sed -i "s/versionName \"1.0.0\"/versionName \"${GITHUB_REF_NAME#v}\"/" android/app/build.gradle
+          python - <<'PY'
+          import os, re
+          from pathlib import Path
+          version = os.environ["GITHUB_REF_NAME"].lstrip("v")
+          path = Path("android/app/build.gradle")
+          source = path.read_text()
+          source, count = re.subn(r'versionName\s+["\'][^"\']+["\']', f'versionName "{version}"', source, count=1)
+          if count == 0:
+              raise SystemExit("versionName in android/app/build.gradle nicht gefunden")
+          path.write_text(source)
+          PY
       - name: APK bauen
         working-directory: android
         run: ./gradlew assembleDebug
       - name: APK als Build-Artefakt bereitstellen
         uses: actions/upload-artifact@v4
         with:
-          name: Blockwissen-Minecraft-Android-${{ github.ref_name }}
+          name: Blockwissen-Minecraft-Android-Test-${{ github.ref_name }}
           path: android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Android Release-Keystore bereitstellen
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > android-release.keystore
+      - name: Release-APK mit dauerhaftem Schlüssel signieren
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        env:
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          "$BUILD_TOOLS/apksigner" sign --ks android-release.keystore --ks-key-alias "$KEY_ALIAS" --ks-pass "pass:$KEYSTORE_PASSWORD" --key-pass "pass:$KEY_PASSWORD" --out Blockwissen-Minecraft-Android.apk android/app/build/outputs/apk/debug/app-debug.apk
+          "$BUILD_TOOLS/apksigner" verify Blockwissen-Minecraft-Android.apk
+      - name: Signierte Android-APK an GitHub Release anhängen
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${GITHUB_REF_NAME}" Blockwissen-Minecraft-Android.apk --clobber
