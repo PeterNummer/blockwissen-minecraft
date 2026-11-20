@@ -1,0 +1,10 @@
+{
+  "appId": "de.blockwissen.minecraft",
+  "appName": "Blockwissen Minecraft",
+  "webDir": "android-web",
+  "server": {
+    "url": "https://blockwissen-minecraft.antlon.workers.dev/",
+    "cleartext": false,
+    "allowNavigation": ["blockwissen-minecraft.antlon.workers.dev"]
+  }
+}
