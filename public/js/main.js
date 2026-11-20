@@ -518,6 +518,7 @@ chatLoginForm.addEventListener('submit', async event => {
       localStorage.setItem('tyqora_session', authToken);
       chatUser = result.user;
       showAccount();
+      window.dispatchEvent(new Event('tyqora:authenticated'));
       await loadShop().catch(() => {});
       connectChat();
     }
@@ -592,6 +593,7 @@ async function restoreSession() {
     const result = await api('/api/me', null, 'GET');
     chatUser = result.user;
     showAccount();
+    window.dispatchEvent(new Event('tyqora:authenticated'));
     await loadShop().catch(() => {});
     connectChat();
   } catch {
