@@ -23,7 +23,7 @@ jobs:
         run: npm install
       - name: Versionsnummer aus Git-Tag übernehmen
         shell: bash
-        run: npm version --no-git-tag-version "${GITHUB_REF_NAME#v}"
+        run: npm version --no-git-tag-version --allow-same-version "${GITHUB_REF_NAME#v}"
       - name: Windows-App bauen und Release veröffentlichen
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -51,7 +51,7 @@ jobs:
         run: npm install
       - name: Versionsnummer aus Git-Tag übernehmen
         shell: bash
-        run: npm version --no-git-tag-version "${GITHUB_REF_NAME#v}"
+        run: npm version --no-git-tag-version --allow-same-version "${GITHUB_REF_NAME#v}"
       - name: Android-Projekt erzeugen
         run: |
           mkdir -p android-web
