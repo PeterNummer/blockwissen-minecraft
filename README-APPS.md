@@ -3,6 +3,8 @@
 Die Apps verwenden dieselbe Online-Website wie die Browser-Version:
 https://blockwissen-minecraft.antlon.workers.dev/
 
+**Inhalte und Website-Funktionen sind dadurch immer aktuell**, sobald du sie auf der Website veröffentlichst. Neue Versionen der Windows- und Android-App selbst werden über GitHub Releases verteilt.
+
 ## Windows
 
 Die Windows-Version wird mit Electron gebaut. Sie prüft beim Start auf neue GitHub-Releases, lädt Updates automatisch herunter und bietet den Neustart zur Installation an.
