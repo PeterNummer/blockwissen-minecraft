@@ -437,3 +437,106 @@ section{scroll-margin-top:92px}.section-head{margin-bottom:20px}.section-head h2
 .guide-steps li{counter-increment:guide-step;position:relative;margin:11px 0;padding:13px 14px 13px 54px;border:1px solid #3b5140;border-radius:12px;background:#1c2b20;color:#e6eee2}
 .guide-steps li::before{content:counter(guide-step);position:absolute;left:13px;top:12px;width:27px;height:27px;display:grid;place-items:center;border-radius:9px;background:#7ed957;color:#10200f;font-weight:900;font-size:.85rem}
 .guide-version-note{font-size:.82rem;color:#94a592!important;margin-top:14px}
+
+
+/* Verfeinerte obere Navigationsleiste */
+header.wrap{
+  min-height:82px;
+  height:auto;
+  gap:24px;
+  border-bottom:1px solid #9ce36b2b;
+  box-shadow:0 8px 30px #0003;
+}
+header .brand{
+  flex:0 0 auto;
+  gap:12px;
+  padding:8px 0;
+  transition:opacity .18s ease,transform .18s ease;
+}
+header .brand:hover{opacity:.92;transform:translateY(-1px)}
+header .brand-mark{
+  width:44px;height:44px;flex-basis:44px;
+  filter:drop-shadow(0 0 10px #8bdc7240);
+}
+header .brand-wordmark{
+  font-size:1.08rem;
+  letter-spacing:1.25px;
+}
+header nav{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:5px;
+  min-width:0;
+  padding:6px;
+  border:1px solid #ffffff12;
+  border-radius:15px;
+  background:linear-gradient(135deg,#ffffff0a,#00000012);
+}
+header nav a{
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:40px;
+  padding:9px 14px;
+  border:1px solid transparent;
+  border-radius:10px;
+  color:#c8d5c5;
+  font-size:.88rem;
+  font-weight:700;
+  white-space:nowrap;
+  transition:background .18s ease,color .18s ease,border-color .18s ease,transform .18s ease;
+}
+header nav a:not(.nav-community):hover{
+  color:#efffe8;
+  background:#ffffff0d;
+  border-color:#ffffff12;
+  transform:translateY(-1px);
+}
+header nav a:focus-visible{
+  outline:2px solid var(--lime);
+  outline-offset:3px;
+}
+header nav .nav-community{
+  margin-left:4px;
+  padding-inline:17px;
+  color:#10200f;
+  background:linear-gradient(135deg,#b4f27b,#72ce50);
+  border:1px solid #c5ffa0;
+  box-shadow:0 4px 15px #7ed95735,inset 0 1px #ffffff70;
+}
+header nav .nav-community:hover{
+  color:#10200f;
+  background:linear-gradient(135deg,#c8ff9a,#82df5d);
+  border-color:#e0ffd0;
+  box-shadow:0 6px 20px #7ed95755;
+  transform:translateY(-1px);
+}
+@media(max-width:760px){
+  header.wrap{gap:12px;padding:10px 16px}
+  header nav{
+    flex:1 1 100%;
+    justify-content:flex-start;
+    overflow-x:auto;
+    scrollbar-width:none;
+    padding:5px;
+  }
+  header nav::-webkit-scrollbar{display:none}
+  header nav a{flex:0 0 auto;font-size:.82rem;padding:8px 12px}
+}
+@media(max-width:480px){
+  header.wrap{
+    min-height:0;
+    align-items:center;
+    padding:9px 12px 10px;
+    gap:8px;
+  }
+  header .brand{padding:2px 0}
+  header .brand-mark{width:36px;height:36px;flex-basis:36px}
+  header .brand-wordmark{font-size:.9rem;letter-spacing:.9px}
+  header .brand-wordmark>span{font-size:.62rem;letter-spacing:1.8px}
+  header nav{width:100%;flex:1 1 100%;gap:4px}
+  header nav a{min-height:36px;padding:7px 10px;font-size:.76rem}
+  header nav .nav-community{margin-left:2px}
+}
