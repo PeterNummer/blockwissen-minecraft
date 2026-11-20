@@ -16,11 +16,12 @@
       const head=el('div','profile-head'),avatar=el('div','profile-avatar');
       if(p.avatarUrl){const img=document.createElement('img');img.referrerPolicy='no-referrer';img.src=avatarSource(p.avatarUrl);img.alt='Profilbild';img.loading='eager';img.decoding='async';img.onerror=()=>{img.remove();avatar.textContent=p.name.slice(0,1).toUpperCase();avatar.title='Das Profilbild konnte nicht geladen werden. Verwende einen direkten HTTPS-Bildlink.';};avatar.append(img);}
       else avatar.textContent=p.name.slice(0,1).toUpperCase();
-      const title=el('div','profile-title');title.append(el('h2','',p.name),el('p','',String(p.role||'member').toUpperCase()));
+      const title=el('div','profile-title');title.append(el('h2','',p.name),el('p','profile-role',String(p.role||'member').toUpperCase()));
       head.append(avatar,title);view.append(head,el('div','profile-bio',p.bio||'Noch keine Profilbeschreibung.'));
       const level=Number(p.level||1),xp=Number(p.xp||0),progress=xp%100;
       const isLegend=p.role==='owner'||level>=10;const rank=isLegend?'Legende':level>=5?'Stammgast':level>=2?'Aktiv':'Neuling';
-      const stats=el('div','profile-progress');stats.append(el('strong','','Level '+level+' · '+rank),el('div','','XP: '+xp+' · Noch '+(100-progress)+' XP bis Level '+(level+1)));
+      title.append(el('p','profile-status','Status: '+rank));
+      const stats=el('div','profile-progress');stats.append(el('strong','','Level '+level),el('div','','XP: '+xp+' · Noch '+(100-progress)+' XP bis Level '+(level+1)));
       const track=el('div','profile-progress-track'),fill=el('span','');fill.style.width=progress+'%';track.append(fill);stats.append(track);
       const achievements=el('div','profile-stats');
       achievements.append(el('span','',level>=2?'🏅 Aktiv dabei':'🔒 Aktiv-Level'),el('span','',level>=5?'🌟 Stammgast':'🔒 Stammgast'),el('span','',isLegend?'👑 Legende':'🔒 Legende'));
