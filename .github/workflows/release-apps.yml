@@ -56,7 +56,7 @@ jobs:
           mkdir -p android-web
           npx cap add android
           mkdir -p android/app/src/main/java/de/blockwissen/minecraft
-          cp android/MainActivity.java android/app/src/main/java/de/blockwissen/minecraft/MainActivity.java
+          cp android-template/MainActivity.java android/app/src/main/java/de/blockwissen/minecraft/MainActivity.java
           python - <<'PY'
           import os, re
           from pathlib import Path
@@ -76,14 +76,20 @@ jobs:
         with:
           name: Blockwissen-Minecraft-Android-Test-${{ github.ref_name }}
           path: android/app/build/outputs/apk/debug/app-debug.apk
-      - name: Android Release-Keystore bereitstellen
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+      - name: Prüfen, ob ein Android-Release-Schlüssel eingerichtet ist
+        id: signing
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
-          echo "$KEYSTORE_BASE64" | base64 --decode > android-release.keystore
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "$KEYSTORE_BASE64" | base64 --decode > android-release.keystore
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "Kein Android-Release-Keystore konfiguriert. APK bleibt ein Test-Artefakt."
+          fi
       - name: Release-APK mit dauerhaftem Schlüssel signieren
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        if: ${{ steps.signing.outputs.available == 'true' }}
         env:
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -93,7 +99,7 @@ jobs:
           "$BUILD_TOOLS/apksigner" sign --ks android-release.keystore --ks-key-alias "$KEY_ALIAS" --ks-pass "pass:$KEYSTORE_PASSWORD" --key-pass "pass:$KEY_PASSWORD" --out Blockwissen-Minecraft-Android.apk android/app/build/outputs/apk/debug/app-debug.apk
           "$BUILD_TOOLS/apksigner" verify Blockwissen-Minecraft-Android.apk
       - name: Signierte Android-APK an GitHub Release anhängen
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        if: ${{ steps.signing.outputs.available == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release upload "${GITHUB_REF_NAME}" Blockwissen-Minecraft-Android.apk --clobber
