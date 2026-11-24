@@ -623,3 +623,15 @@ header.wrap nav::-webkit-scrollbar{display:none}
   header.wrap .brand{width:auto;padding:1px 0}
   header.wrap nav{width:100%;flex:0 1 auto;justify-content:flex-start}
 }
+
+/* Geheimer mobiler PIN-Dialog */
+.mobile-chat-pin{position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:20px;background:#050908f2;backdrop-filter:blur(12px)}
+.mobile-chat-pin[hidden]{display:none}
+.mobile-chat-pin-card{position:relative;width:min(360px,100%);padding:28px 24px 22px;border:1px solid #415247;border-radius:18px;background:linear-gradient(145deg,#202f22,#141d18);box-shadow:0 24px 80px #000b;display:flex;flex-direction:column;gap:12px}
+.mobile-chat-pin-card h2,.mobile-chat-pin-card p{margin:0}
+.mobile-chat-pin-card>p{color:#a9b8a6}
+.mobile-chat-pin-card label{font-size:.85rem;color:#dce8d8}
+.mobile-chat-pin-card input{width:100%;min-height:48px;padding:12px;border:1px solid #526453;border-radius:9px;background:#0d1510;color:white;font:inherit;letter-spacing:4px}
+.mobile-chat-pin-card .chat-primary{min-height:48px;border:0;border-radius:9px;background:#8bdc72;color:#10200f;font-weight:800}
+.mobile-pin-close{position:absolute;right:12px;top:12px}
+.mobile-chat-pin-card .chat-feedback{min-height:20px;font-size:.84rem;color:#ffb4a8}
