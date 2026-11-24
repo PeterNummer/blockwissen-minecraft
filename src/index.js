@@ -60,7 +60,7 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === "/api/mobile-gate" && request.method === "POST") {
       if (request.headers.get("Origin") !== url.origin) return json({ error: "Unzulässiger Ursprung." }, 403);
-      if (!env.TYQORA_MOBILE_PIN || env.TYQORA_MOBILE_PIN.length < 6) return json({ error: "Der mobile Geheimzugang ist noch nicht eingerichtet." }, 503);
+      if (!env.TYQORA_MOBILE_PIN || env.TYQORA_MOBILE_PIN.length < 4) return json({ error: "Der mobile Geheimzugang ist noch nicht eingerichtet." }, 503);
       try {
         const data = await readBody(request);
         if (typeof data.pin !== "string" || data.pin.length > 32) return json({ error: "Die PIN ist nicht richtig." }, 401);
