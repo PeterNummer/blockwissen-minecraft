@@ -635,3 +635,6 @@ header.wrap nav::-webkit-scrollbar{display:none}
 .mobile-chat-pin-card .chat-primary{min-height:48px;border:0;border-radius:9px;background:#8bdc72;color:#10200f;font-weight:800}
 .mobile-pin-close{position:absolute;right:12px;top:12px}
 .mobile-chat-pin-card .chat-feedback{min-height:20px;font-size:.84rem;color:#ffb4a8}
+
+/* The logo is the deliberate touch surface for the hidden mobile gesture. */
+.brand{touch-action:none}
