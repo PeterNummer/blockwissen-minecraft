@@ -403,7 +403,7 @@ footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-s
 .chat-side-bottom{margin-top:18px}
 
 /* Tablet: linke Chat-Leiste kompakt halten und Account-Aktionen umbrechen */
-@media(min-width:761px) and (max-width:980px){
+@media(min-width:481px) and (max-width:980px){
   .chat-shell{grid-template-columns:minmax(178px,205px) minmax(0,1fr)}
   .chat-side{min-width:0;padding:14px 9px;overflow-x:hidden}
   .chat-brand{padding:5px 6px 16px;font-size:.9rem;letter-spacing:.6px}
