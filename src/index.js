@@ -7,8 +7,20 @@ const SHOP_ITEMS = [
   { id: "mint_name", name: "Mint-Name", description: "Dein Name erscheint in frischem Mintgrün.", price: 50, type: "name", color: "#70e1b5", icon: "🌿" },
   { id: "gold_name", name: "Gold-Name", description: "Ein goldener Name für deinen Chat-Auftritt.", price: 100, type: "name", color: "#ffd166", icon: "✨" },
   { id: "violet_name", name: "Violett-Name", description: "Ein auffälliger violetter Namensstil.", price: 250, type: "name", color: "#c4a1ff", icon: "💜" },
+  { id: "ocean_name", name: "Ozean-Blau", description: "Ein kühler, leuchtender Blauton für deinen Namen.", price: 120, type: "name", color: "#54b9ff", icon: "🌊" },
+  { id: "ruby_name", name: "Rubin-Rot", description: "Ein kräftiger roter Farbverlauf.", price: 160, type: "name", color: "#ff647c", icon: "❤️" },
+  { id: "sunset_name", name: "Sonnenuntergang", description: "Ein warmer Verlauf aus Orange und Pink.", price: 190, type: "name", color: "#ff9b61", icon: "🌅" },
+  { id: "ice_name", name: "Eis-Kristall", description: "Ein frostiger Look in hellem Cyan.", price: 220, type: "name", color: "#8be9ff", icon: "❄️" },
+  { id: "emerald_name", name: "Smaragd-Grün", description: "Ein satter grüner Farbverlauf.", price: 240, type: "name", color: "#6ee7a8", icon: "💎" },
   { id: "owner_red_name", name: "Owner-Rot", description: "Exklusiver roter Namensstil für den Owner.", price: 0, type: "name", color: "#ff5b65", icon: "🔴", ownerOnly: true },
-  { id: "star_badge", name: "Stern-Badge", description: "Ein Stern neben deinem Namen – auch zusammen mit einer Namensfarbe.", price: 180, type: "badge", badge: "⭐", icon: "⭐" }
+  { id: "star_badge", name: "Stern-Badge", description: "Ein Stern neben deinem Namen.", price: 180, type: "badge", badge: "⭐", icon: "⭐" },
+  { id: "crown_badge", name: "Kronen-Badge", description: "Eine Krone neben deinem Namen.", price: 220, type: "badge", badge: "👑", icon: "👑" },
+  { id: "fire_badge", name: "Feuer-Badge", description: "Eine Flamme neben deinem Namen.", price: 150, type: "badge", badge: "🔥", icon: "🔥" },
+  { id: "diamond_badge", name: "Diamant-Badge", description: "Ein Diamant neben deinem Namen.", price: 200, type: "badge", badge: "💎", icon: "💎" },
+  { id: "rocket_badge", name: "Raketen-Badge", description: "Eine Rakete neben deinem Namen.", price: 170, type: "badge", badge: "🚀", icon: "🚀" },
+  { id: "heart_badge", name: "Herz-Badge", description: "Ein Herz neben deinem Namen.", price: 130, type: "badge", badge: "💜", icon: "💜" },
+  { id: "leaf_badge", name: "Blatt-Badge", description: "Ein Blatt neben deinem Namen.", price: 110, type: "badge", badge: "🍀", icon: "🍀" },
+  { id: "ghost_badge", name: "Geister-Badge", description: "Ein Geist neben deinem Namen.", price: 190, type: "badge", badge: "👻", icon: "👻" }
 ];
 
 function json(data, status = 200) {
