@@ -64,6 +64,65 @@ document.addEventListener('keydown',event=>{
  if(event.ctrlKey&&event.shiftKey&&event.key.toLowerCase()==='k'){event.preventDefault();if(guideModal.classList.contains('open'))closeGuide();overlay.classList.contains('open')?closeChat():openChat()}
  if(event.key==='Escape'){if(guideModal.classList.contains('open'))closeGuide();if(overlay.classList.contains('open'))closeChat()}
 });
+ 
+// Versteckter mobiler Zugang: Kreisgeste + serverseitig geprüfte PIN.
+(() => {
+ const pinLayer=document.getElementById('mobileChatPin');
+ const pinForm=document.getElementById('mobileChatPinForm');
+ const pinInput=document.getElementById('mobileChatPinInput');
+ const pinFeedback=document.getElementById('mobileChatPinFeedback');
+ const closePin=()=>{pinLayer.hidden=true;pinForm.reset();pinFeedback.textContent='';};
+ document.getElementById('closeMobilePin')?.addEventListener('click',closePin);
+ pinLayer?.addEventListener('click',event=>{if(event.target===pinLayer)closePin();});
+ pinForm?.addEventListener('submit',async event=>{
+  event.preventDefault();
+  const submit=document.getElementById('mobileChatPinSubmit');
+  submit.disabled=true;pinFeedback.textContent='Prüfe Zugang …';
+  try{
+   const response=await fetch('/api/mobile-gate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:pinInput.value})});
+   const data=await response.json().catch(()=>({}));
+   if(!response.ok||!data.ok)throw new Error(data.error||'Die PIN ist nicht richtig.');
+   closePin();openChat();
+  }catch(error){pinFeedback.textContent=error.message;pinInput.select();}
+  finally{submit.disabled=false;}
+ });
+ let points=[],drawing=false,lastPoint=0;
+ function isCircle(path){
+  if(path.length<12)return false;
+  const xs=path.map(p=>p.x),ys=path.map(p=>p.y);
+  const cx=xs.reduce((a,b)=>a+b,0)/xs.length,cy=ys.reduce((a,b)=>a+b,0)/ys.length;
+  const radii=path.map(p=>Math.hypot(p.x-cx,p.y-cy));
+  const radius=radii.reduce((a,b)=>a+b,0)/radii.length;
+  if(radius<24||radius>190)return false;
+  const variance=Math.sqrt(radii.reduce((sum,r)=>sum+(r-radius)**2,0)/radii.length)/radius;
+  const closure=Math.hypot(path[0].x-path.at(-1).x,path[0].y-path.at(-1).y)/radius;
+  let angle=0;
+  for(let i=1;i<path.length;i++){
+   const a=Math.atan2(path[i-1].y-cy,path[i-1].x-cx);
+   const b=Math.atan2(path[i].y-cy,path[i].x-cx);
+   let delta=b-a;if(delta>Math.PI)delta-=Math.PI*2;if(delta< -Math.PI)delta+=Math.PI*2;
+   angle+=delta;
+  }
+  return variance<0.48&&closure<0.65&&Math.abs(angle)>Math.PI*1.55;
+ }
+ document.addEventListener('pointerdown',event=>{
+  if(event.pointerType!=='touch'||overlay.classList.contains('open')||!pinLayer.hidden)return;
+  drawing=true;points=[{x:event.clientX,y:event.clientY}];lastPoint=Date.now();
+ },{passive:true});
+ document.addEventListener('pointermove',event=>{
+  if(!drawing)return;
+  if(Date.now()-lastPoint>1800){drawing=false;points=[];return;}
+  const previous=points[points.length-1];
+  if(!previous||Math.hypot(event.clientX-previous.x,event.clientY-previous.y)>5)points.push({x:event.clientX,y:event.clientY});
+ },{passive:true});
+ const finishGesture=()=>{
+  if(!drawing)return;drawing=false;
+  if(isCircle(points)){pinLayer.hidden=false;pinInput.focus();}
+  points=[];
+ };
+ document.addEventListener('pointerup',finishGesture,{passive:true});
+ document.addEventListener('pointercancel',()=>{drawing=false;points=[];},{passive:true});
+})();
 
 
 // TYQORA CHAT – Accounts, Sessions, Rollen und Owner-Verwaltung
