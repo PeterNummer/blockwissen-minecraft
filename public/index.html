@@ -7,7 +7,7 @@
 <meta name="description" content="Blockwissen Minecraft – Tipps, Tricks und Anleitungen für Minecraft Java und Bedrock.">
 <title>Blockwissen Minecraft – Tipps, Tricks & Anleitungen</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="stylesheet" href="/css/style.css?v=shop-colors-tablet-dms-1">
+<link rel="stylesheet" href="/css/style.css?v=mobile-circle-pin-1">
 </head>
 <body>
 <header class="wrap"><a class="brand" href="#" aria-label="Blockwissen Minecraft – Startseite">
@@ -45,6 +45,18 @@
 </main>
 <footer><div class="wrap foot"><span>© 2026 Blockwissen Minecraft</span><span>Ein unabhängiges Fanprojekt. Nicht mit Mojang oder Microsoft verbunden.</span></div></footer>
 <div id="guideModal" class="guide-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="guideTitle"><div class="guide-dialog"><div class="guide-dialog-top"><span class="tag">BLOCKWISSEN GUIDE</span><button type="button" class="close guide-close" id="closeGuide" aria-label="Guide schließen">✕</button></div><div id="guideBody"></div></div></div>
+<div id="mobileChatPin" class="mobile-chat-pin" hidden>
+  <form id="mobileChatPinForm" class="mobile-chat-pin-card">
+    <button type="button" id="closeMobilePin" class="close mobile-pin-close" aria-label="Abbrechen">✕</button>
+    <div class="welcome-icon">◉</div>
+    <h2>TYQORA Zugang</h2>
+    <p>Geheime PIN eingeben</p>
+    <label for="mobileChatPinInput">PIN</label>
+    <input id="mobileChatPinInput" type="password" inputmode="numeric" autocomplete="off" maxlength="32" required>
+    <button class="chat-primary" type="submit" id="mobileChatPinSubmit">Öffnen</button>
+    <p class="chat-feedback" id="mobileChatPinFeedback" role="status"></p>
+  </form>
+</div>
 <div id="chatOverlay" aria-hidden="true">
   <div class="chat-shell">
     <aside class="chat-side">
@@ -109,8 +121,8 @@
 </div>
 <div class="community-modal" id="communityHub" hidden><section class="community-dialog community-hub-dialog"><button class="close community-close" id="closeCommunity" type="button">✕</button><div class="community-tabs"><button type="button" data-hub-tab="notifications">Benachrichtigungen</button><button type="button" data-hub-tab="dms">Private Nachrichten</button></div><div id="communityHubBody"></div></section></div>
 <div class="community-modal" id="profileModal" hidden><section class="community-dialog"><button class="close community-close" id="closeProfile" type="button">✕</button><div id="profileView"></div></section></div>
-<script src="/js/main.js?v=shop-colors-tablet-dms-1" defer></script>
+<script src="/js/main.js?v=mobile-circle-pin-1" defer></script>
 <script src="/js/profiles.js?v=profiles-4" defer></script>
-<script src="/js/community.js?v=shop-colors-tablet-dms-1" defer></script>
+<script src="/js/community.js?v=mobile-circle-pin-1" defer></script>
 </body>
 </html>
