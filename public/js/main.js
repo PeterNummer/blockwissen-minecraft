@@ -106,7 +106,7 @@ document.addEventListener('keydown',event=>{
   return variance<0.48&&closure<0.65&&Math.abs(angle)>Math.PI*1.55;
  }
  document.addEventListener('pointerdown',event=>{
-  if(event.pointerType!=='touch'||overlay.classList.contains('open')||!pinLayer.hidden)return;
+  if(event.pointerType!=='touch'||!event.target.closest('.brand')||overlay.classList.contains('open')||!pinLayer.hidden)return;
   drawing=true;points=[{x:event.clientX,y:event.clientY}];lastPoint=Date.now();
  },{passive:true});
  document.addEventListener('pointermove',event=>{
