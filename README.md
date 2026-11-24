@@ -10,4 +10,4 @@ Die Website wurde mithilfe von KI erstellt und es stecken hunderte Promts an Arb
 ## Website
 
 Die Website wurde in Cloudflare veröffentlicht und die Adresse lautet:
-https://blockwissen-minecraft.antlon.workers.dev/
+https://peternummer.github.io/blockwissen-minecraft/
