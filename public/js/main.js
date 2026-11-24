@@ -42,6 +42,9 @@ mobileNavToggle?.addEventListener('click', () => {
 overlay.addEventListener('click', event => {
   if (event.target === overlay) closeMobileNav();
 });
+chatShell?.addEventListener('click', event => {
+  if (event.target === chatShell) closeMobileNav();
+});
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape') closeMobileNav();
 });
