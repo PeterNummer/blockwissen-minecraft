@@ -2,7 +2,7 @@
   const hub=document.getElementById('communityHub'), hubBody=document.getElementById('communityHubBody');
   if(!hub||!hubBody)return;
   const token=()=>localStorage.getItem('tyqora_session')||sessionStorage.getItem('tyqora_session')||'';
-  let activeTab='notifications', selectedDm='', members=[], currentUserId='', dmPollTimer=null;
+  let activeTab='notifications', selectedDm='', members=[], currentUserId='', dmPollTimer=null, dmSidebarExpanded=true;
   fetch('/api/me',{headers:{Authorization:'Bearer '+token()}}).then(r=>r.json()).then(d=>{currentUserId=d.user?.id||'';}).catch(()=>{});
   async function api(path,method='GET',body=null){
     const response=await fetch('/api/community/'+path,{method,headers:{Authorization:'Bearer '+token(),...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});
@@ -103,6 +103,15 @@
   document.getElementById('openNotifications')?.addEventListener('click',()=>openHub('notifications'));
   document.getElementById('openDMs')?.addEventListener('click',()=>openHub('dms'));
   document.getElementById('dmSidebarNew')?.addEventListener('click',()=>{selectedDm='';openHub('dms');});
+  const dmSidebarToggle=document.getElementById('dmSidebarToggle');
+  const dmSidebarContent=document.getElementById('dmSidebarContent');
+  dmSidebarToggle?.addEventListener('click',()=>{
+    dmSidebarExpanded=!dmSidebarExpanded;
+    if(dmSidebarContent)dmSidebarContent.hidden=!dmSidebarExpanded;
+    dmSidebarToggle.setAttribute('aria-expanded',String(dmSidebarExpanded));
+    const chevron=dmSidebarToggle.querySelector('.dm-sidebar-chevron');
+    if(chevron)chevron.textContent=dmSidebarExpanded?'▾':'▸';
+  });
   document.getElementById('closeCommunity')?.addEventListener('click',()=>{hub.hidden=true;if(dmPollTimer)window.clearInterval(dmPollTimer);});
   hub.addEventListener('click',e=>{if(e.target===hub){hub.hidden=true;if(dmPollTimer)window.clearInterval(dmPollTimer);}});
   document.querySelectorAll('[data-hub-tab]').forEach(b=>b.addEventListener('click',()=>openHub(b.dataset.hubTab)));
