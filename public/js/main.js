@@ -27,6 +27,29 @@ document.getElementById('chatRefresh')?.addEventListener('click', () => {
 });
 document.getElementById('closeChat').addEventListener('click',closeChat);
 
+const mobileNavToggle = document.getElementById('mobileNavToggle');
+const chatShell = document.querySelector('.chat-shell');
+function closeMobileNav() {
+  chatShell?.classList.remove('mobile-nav-open');
+  mobileNavToggle?.setAttribute('aria-expanded', 'false');
+  mobileNavToggle?.setAttribute('aria-label', 'Menü öffnen');
+}
+mobileNavToggle?.addEventListener('click', () => {
+  const isOpen = chatShell.classList.toggle('mobile-nav-open');
+  mobileNavToggle.setAttribute('aria-expanded', String(isOpen));
+  mobileNavToggle.setAttribute('aria-label', isOpen ? 'Menü schließen' : 'Menü öffnen');
+});
+overlay.addEventListener('click', event => {
+  if (event.target === overlay) closeMobileNav();
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') closeMobileNav();
+});
+document.querySelector('.chat-side')?.addEventListener('click', event => {
+  if (event.target.closest('button') && !event.target.closest('#dmSidebarToggle')) closeMobileNav();
+});
+
+
 const guideModal=document.getElementById('guideModal');
 const guideBody=document.getElementById('guideBody');
 const guides={
