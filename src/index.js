@@ -58,6 +58,23 @@ function validPassword(password) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname === "/api/mobile-gate" && request.method === "POST") {
+      if (request.headers.get("Origin") !== url.origin) return json({ error: "Unzulässiger Ursprung." }, 403);
+      if (!env.TYQORA_MOBILE_PIN || env.TYQORA_MOBILE_PIN.length < 6) return json({ error: "Der mobile Geheimzugang ist noch nicht eingerichtet." }, 503);
+      try {
+        const data = await readBody(request);
+        if (typeof data.pin !== "string" || data.pin.length > 32) return json({ error: "Die PIN ist nicht richtig." }, 401);
+        const encoder = new TextEncoder();
+        const expected = new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(env.TYQORA_MOBILE_PIN)));
+        const supplied = new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(data.pin)));
+        let difference = 0;
+        for (let i = 0; i < expected.length; i++) difference |= expected[i] ^ supplied[i];
+        if (difference !== 0) return json({ error: "Die PIN ist nicht richtig." }, 401);
+        return json({ ok: true });
+      } catch {
+        return json({ error: "Die PIN konnte nicht geprüft werden." }, 400);
+      }
+    }
     if (url.pathname === "/api/avatar-proxy" && request.method === "GET") {
       const source = url.searchParams.get("url") || "";
       let imageUrl;
