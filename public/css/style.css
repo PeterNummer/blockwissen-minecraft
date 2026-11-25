@@ -814,3 +814,27 @@ header.wrap nav::-webkit-scrollbar{display:none}
   .chat-top-actions .chat-refresh{width:32px!important;min-width:32px;height:34px;min-height:34px}
   .chat-top-actions .close{padding:6px!important;font-size:.68rem!important}
 }
+
+
+/* Keyboard-aware mobile chat: fit the chat to the actually visible viewport. */
+@media(max-width:760px){
+  #chatOverlay.open{
+    top:var(--tyqora-viewport-top,0px)!important;
+    bottom:auto!important;
+    height:var(--tyqora-viewport-height,100dvh)!important;
+    min-height:0!important;
+  }
+  .chat-shell{height:100%!important;max-height:100%!important}
+  .chat-main{height:100%!important;max-height:100%!important}
+  .chat-room{min-height:0!important}
+  .chat-messages{min-height:0!important;overscroll-behavior:contain}
+  .chat-composer{flex-shrink:0!important}
+  .chat-shell.keyboard-open .chat-top{min-height:46px!important;padding-block:4px!important}
+  .chat-shell.keyboard-open .chat-top .mobile-nav-toggle{height:34px;width:34px;flex-basis:34px}
+  .chat-shell.keyboard-open .chat-top-actions .close{display:none!important}
+  .chat-shell.keyboard-open .chat-composer{padding-top:6px!important;padding-bottom:6px!important}
+  .chat-shell.keyboard-open .chat-composer input{min-height:42px!important}
+  .chat-shell.keyboard-open .chat-composer .chat-primary,
+  .chat-shell.keyboard-open .chat-commands-button{min-height:42px!important}
+  .chat-shell.keyboard-open .chat-suggestions{max-height:32vh;overflow-y:auto}
+}
