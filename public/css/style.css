@@ -854,3 +854,17 @@ header.wrap nav::-webkit-scrollbar{display:none}
 @media(max-width:760px){
   #communityHub .community-tabs [data-hub-tab="dms"]{display:none!important}
 }
+
+
+/* Keep the notification bell in the mobile header; only hide the duplicate DM shortcut. */
+@media(max-width:760px){
+  .chat-top-actions #openNotifications{
+    display:inline-flex!important;align-items:center;justify-content:center;
+    width:auto!important;min-width:48px!important;height:34px!important;
+    padding:0 7px!important;font-size:.9rem!important;gap:3px;
+  }
+  .chat-top-actions #openNotifications span{
+    display:inline!important;font-size:.72rem!important;line-height:1!important;
+  }
+  .chat-top-actions #openDMs{display:none!important}
+}
