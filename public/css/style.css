@@ -848,3 +848,9 @@ header.wrap nav::-webkit-scrollbar{display:none}
   .chat-top-actions .close{margin-left:auto!important}
   .chat-top-actions{margin-left:auto!important}
 }
+
+
+/* On phones, private conversations are accessed only from the left sidebar. */
+@media(max-width:760px){
+  #communityHub .community-tabs [data-hub-tab="dms"]{display:none!important}
+}
