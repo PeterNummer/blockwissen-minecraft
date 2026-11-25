@@ -9,10 +9,9 @@ const SHOP_ITEMS = [
   { id: "violet_name", name: "Violett-Name", description: "Ein auffälliger violetter Namensstil.", price: 250, type: "name", color: "#c4a1ff", icon: "💜" },
   { id: "ocean_name", name: "Ozean-Blau", description: "Ein kühler, leuchtender Blauton für deinen Namen.", price: 120, type: "name", color: "#54b9ff", icon: "🌊" },
   { id: "ruby_name", name: "Rubin-Rot", description: "Ein kräftiger roter Farbverlauf.", price: 160, type: "name", color: "#ff647c", icon: "❤️" },
-  { id: "sunset_name", name: "Sonnenuntergang", description: "Ein warmer Verlauf aus Orange und Pink.", price: 190, type: "name", color: "#ff9b61", icon: "🌅" },
+  { id: "sunset_name", name: "Sonnenuntergang", description: "Exklusiver Namensstil nur für den Owner – ein warmer Verlauf aus Orange und Pink.", price: 0, type: "name", color: "#ff9b61", icon: "🌅", ownerOnly: true },
   { id: "ice_name", name: "Eis-Kristall", description: "Ein frostiger Look in hellem Cyan.", price: 220, type: "name", color: "#8be9ff", icon: "❄️" },
   { id: "emerald_name", name: "Smaragd-Grün", description: "Ein satter grüner Farbverlauf.", price: 240, type: "name", color: "#6ee7a8", icon: "💎" },
-  { id: "owner_red_name", name: "Owner-Rot", description: "Exklusiver roter Namensstil für den Owner.", price: 0, type: "name", color: "#ff5b65", icon: "🔴", ownerOnly: true },
   { id: "star_badge", name: "Stern-Badge", description: "Ein Stern neben deinem Namen.", price: 180, type: "badge", badge: "⭐", icon: "⭐" },
   { id: "crown_badge", name: "Kronen-Badge", description: "Eine Krone neben deinem Namen.", price: 220, type: "badge", badge: "👑", icon: "👑" },
   { id: "fire_badge", name: "Feuer-Badge", description: "Eine Flamme neben deinem Namen.", price: 150, type: "badge", badge: "🔥", icon: "🔥" },
@@ -337,7 +336,13 @@ export class AuthStore extends DurableObject {
       const user = one("SELECT coins,role,equipped_item AS equippedItem,equipped_badge AS equippedBadge FROM users WHERE id=?", data.userId);
       if (!user) return json({ error: "Account nicht gefunden." }, 404);
       const owned = this.sql.exec("SELECT item_id AS id FROM user_items WHERE user_id=?", data.userId).toArray().map(item => item.id);
-      if (user.role === "owner") owned.push("owner_red_name");
+      if (user.role === "owner") {
+        owned.push("sunset_name");
+        if (user.equippedItem === "owner_red_name") {
+          this.sql.exec("UPDATE users SET equipped_item='sunset_name' WHERE id=?", data.userId);
+          user.equippedItem = "sunset_name";
+        }
+      }
       return json({ coins: user.coins, equippedItem: user.equippedItem || "", equippedBadge: user.equippedBadge || "", owned, items: SHOP_ITEMS });
     }
     if (path === "/shop-buy") {
