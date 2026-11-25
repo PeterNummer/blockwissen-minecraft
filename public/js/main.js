@@ -161,7 +161,34 @@ const chatLoginForm = document.getElementById('chatLoginForm');
 const chatLoginFeedback = document.getElementById('chatLoginFeedback');
 const chatMessages = document.getElementById('chatMessages');
 const chatMessageForm = document.getElementById('chatMessageForm');
+
 const chatMessageInput = document.getElementById('chatMessageInput');
+
+// Keep the mobile chat inside the visible area when the Android keyboard opens.
+(() => {
+  const viewport = window.visualViewport;
+  const syncChatViewport = () => {
+    if (!viewport) return;
+    document.documentElement.style.setProperty('--tyqora-viewport-height', viewport.height + 'px');
+    document.documentElement.style.setProperty('--tyqora-viewport-top', viewport.offsetTop + 'px');
+    const focused = document.activeElement === chatMessageInput;
+    const keyboardOpen = focused && viewport.height < window.innerHeight * 0.82;
+    chatShell?.classList.toggle('keyboard-open', keyboardOpen);
+    if (keyboardOpen) {
+      requestAnimationFrame(() => {
+        if (document.activeElement === chatMessageInput) {
+          chatMessages?.scrollTo({ top: chatMessages.scrollHeight, behavior: 'auto' });
+        }
+      });
+    }
+  };
+  viewport?.addEventListener('resize', syncChatViewport);
+  viewport?.addEventListener('scroll', syncChatViewport);
+  chatMessageInput?.addEventListener('focus', () => setTimeout(syncChatViewport, 80));
+  chatMessageInput?.addEventListener('blur', () => setTimeout(syncChatViewport, 120));
+  window.addEventListener('resize', syncChatViewport);
+  syncChatViewport();
+})();
 const chatCommandsButton = document.getElementById('chatCommandsButton');
 const chatNameInput = document.getElementById('chatName');
 const chatPasswordInput = document.getElementById('chatPassword');
