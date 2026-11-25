@@ -327,7 +327,6 @@ footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-s
 .cosmetic-name-mint_name{background-image:linear-gradient(105deg,#62dfb4 0%,#a0f2d1 48%,#54cfa8 100%);--cosmetic-glow:#55d9ad66}
 .cosmetic-name-gold_name{background-image:linear-gradient(105deg,#eab849 0%,#ffe6a0 48%,#d99b28 100%);--cosmetic-glow:#f4c65b66}
 .cosmetic-name-violet_name{background-image:linear-gradient(105deg,#a982f3 0%,#dfc5ff 48%,#9870e8 100%);--cosmetic-glow:#b58aff70}
-.cosmetic-name-owner_red_name{background-image:linear-gradient(105deg,#ff5968 0%,#ffabb0 48%,#e83e55 100%);--cosmetic-glow:#ff596870}
 .cosmetic-name-ocean_name{background-image:linear-gradient(105deg,#3c9bff 0%,#a4e3ff 48%,#2876dc 100%);--cosmetic-glow:#54b9ff80}
 .cosmetic-name-ruby_name{background-image:linear-gradient(105deg,#ff496d 0%,#ffb0bd 48%,#d92e58 100%);--cosmetic-glow:#ff647c80}
 .cosmetic-name-sunset_name{background-image:linear-gradient(105deg,#ff8a45 0%,#ffd18c 48%,#f05b91 100%);--cosmetic-glow:#ff9b6180}
@@ -728,4 +727,17 @@ header.wrap nav::-webkit-scrollbar{display:none}
 }
 @media(prefers-reduced-motion:reduce){
   .chat-side,.chat-shell::after{transition:none}
+}
+
+
+/* Sidebar: private chats scroll within their own area; connection status stays below. */
+.chat-side{min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.dm-sidebar-section{flex:0 1 auto;min-height:0}
+.dm-sidebar-list{max-height:clamp(90px,22vh,180px);overflow-y:auto;overscroll-behavior:contain}
+.chat-side-bottom{flex:0 0 auto;margin-top:auto!important;padding:12px 10px max(8px,env(safe-area-inset-bottom));border-top:1px solid #ffffff12;background:#191a1d;position:relative;z-index:2}
+@media(max-width:600px){
+  .chat-side{display:flex!important;flex-direction:column;min-height:0;overflow-y:auto;padding-bottom:0}
+  .dm-sidebar-section{flex:0 1 auto;max-height:42vh}
+  .dm-sidebar-list{max-height:clamp(80px,20vh,160px)}
+  .chat-side-bottom{margin-top:auto!important;position:sticky;bottom:0;flex-shrink:0;background:#111820;border-top:1px solid #ffffff18}
 }
