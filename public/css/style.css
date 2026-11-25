@@ -838,3 +838,13 @@ header.wrap nav::-webkit-scrollbar{display:none}
   .chat-shell.keyboard-open .chat-commands-button{min-height:42px!important}
   .chat-shell.keyboard-open .chat-suggestions{max-height:32vh;overflow-y:auto}
 }
+
+
+/* Mobile: notification and DM hub buttons do not belong in the chat header. */
+@media(max-width:760px){
+  .chat-top-actions #openNotifications,
+  .chat-top-actions #openDMs{display:none!important}
+  .chat-top-actions #openNotifications span{display:none!important}
+  .chat-top-actions .close{margin-left:auto!important}
+  .chat-top-actions{margin-left:auto!important}
+}
