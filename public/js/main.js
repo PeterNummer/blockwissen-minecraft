@@ -354,11 +354,14 @@ function renderChatMessage(message) {
     if (!message.bot) {
       const pin = document.createElement('button');
       pin.type = 'button';
+      pin.className = 'message-pin-toggle';
+      pin.dataset.pinned = String(!!message.pinned);
       pin.textContent = message.pinned ? 'Anpinnen lösen' : 'Nachricht anpinnen';
       pin.addEventListener('click', () => {
         menu.hidden = true;
         menuButton.setAttribute('aria-expanded', 'false');
-        if (chatSocket && chatSocket.readyState === WebSocket.OPEN) chatSocket.send(JSON.stringify({type:'message_pin', id:message.id, pinned:!message.pinned}));
+        const nextPinned = pin.dataset.pinned !== 'true';
+        if (chatSocket && chatSocket.readyState === WebSocket.OPEN) chatSocket.send(JSON.stringify({type:'message_pin', id:message.id, pinned:nextPinned}));
       });
       menu.append(pin);
     }
@@ -484,6 +487,8 @@ function connectChat() {
       const row = chatMessages.querySelector('[data-message-id="' + CSS.escape(data.id) + '"]');
       if (row) {
         row.classList.toggle('message-pinned', !!data.pinned);
+        const pinToggle=row.querySelector('.message-pin-toggle');
+        if(pinToggle){pinToggle.dataset.pinned=String(!!data.pinned);pinToggle.textContent=data.pinned?'Anpinnen lösen':'Nachricht anpinnen';}
         row.querySelector('.pinned-message-label')?.remove();
         if (data.pinned) { const pin=document.createElement('div'); pin.className='pinned-message-label'; pin.textContent='📌 Angepinnt'; row.insertBefore(pin,row.querySelector('.chat-message-meta')); }
       }
