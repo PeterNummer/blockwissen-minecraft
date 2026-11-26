@@ -868,3 +868,8 @@ header.wrap nav::-webkit-scrollbar{display:none}
   }
   .chat-top-actions #openDMs{display:none!important}
 }
+
+
+/* TYQORA message pins and profile customization */
+.chat-message.message-pinned{border-left:3px solid #9ce36b;padding-left:12px;background:rgba(156,227,107,.045)}
+.pinned-message-label{display:inline-flex;align-items:center;gap:6px;margin:0 0 7px;padding:4px 9px;border-radius:999px;background:rgba(156,227,107,.12);color:#b8f58f;font-size:.75rem;font-weight:700;width:max-content}
