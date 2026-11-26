@@ -281,7 +281,7 @@ function renderMentionText(container,text){
 }
 function renderChatMessage(message) {
   const row = document.createElement('article');
-  row.className = 'chat-message' + (message.bot ? ' bot-message' : '');
+  row.className = 'chat-message' + (message.bot ? ' bot-message' : '') + (message.pinned ? ' message-pinned' : '');
   row.dataset.messageId = message.id;
   if (message.userId) row.dataset.userId = message.userId;
   const meta = document.createElement('div');
@@ -324,6 +324,7 @@ function renderChatMessage(message) {
     time.append(edited);
   }
   meta.append(time);
+  if (message.pinned) { const pin= document.createElement('div'); pin.className='pinned-message-label'; pin.textContent='📌 Angepinnt'; row.append(pin); }
   row.append(meta, body);
   if (["owner","admin","moderator"].includes(chatUser?.role)) {
     const menuWrap = document.createElement('div');
@@ -349,6 +350,17 @@ function renderChatMessage(message) {
         if (chatSocket && chatSocket.readyState === WebSocket.OPEN) chatSocket.send(JSON.stringify({type:'message_edit', id:message.id, text:updated}));
       });
       menu.append(edit);
+    }
+    if (!message.bot) {
+      const pin = document.createElement('button');
+      pin.type = 'button';
+      pin.textContent = message.pinned ? 'Anpinnen lösen' : 'Nachricht anpinnen';
+      pin.addEventListener('click', () => {
+        menu.hidden = true;
+        menuButton.setAttribute('aria-expanded', 'false');
+        if (chatSocket && chatSocket.readyState === WebSocket.OPEN) chatSocket.send(JSON.stringify({type:'message_pin', id:message.id, pinned:!message.pinned}));
+      });
+      menu.append(pin);
     }
     const remove = document.createElement('button');
     remove.type = 'button';
@@ -467,6 +479,14 @@ function connectChat() {
           if (nameItem) name.classList.add('cosmetic-name', 'cosmetic-name-' + nameItem.id);
         }
       });
+    }
+    else if (data.type === 'message_pin' && data.id) {
+      const row = chatMessages.querySelector('[data-message-id="' + CSS.escape(data.id) + '"]');
+      if (row) {
+        row.classList.toggle('message-pinned', !!data.pinned);
+        row.querySelector('.pinned-message-label')?.remove();
+        if (data.pinned) { const pin=document.createElement('div'); pin.className='pinned-message-label'; pin.textContent='📌 Angepinnt'; row.insertBefore(pin,row.querySelector('.chat-message-meta')); }
+      }
     }
     else if (data.type === 'message_update' && data.message) {
       const existing = chatMessages.querySelector('[data-message-id="' + CSS.escape(data.message.id) + '"]');
