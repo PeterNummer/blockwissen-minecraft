@@ -873,3 +873,25 @@ header.wrap nav::-webkit-scrollbar{display:none}
 /* TYQORA message pins and profile customization */
 .chat-message.message-pinned{border-left:3px solid #9ce36b;padding-left:12px;background:rgba(156,227,107,.045)}
 .pinned-message-label{display:inline-flex;align-items:center;gap:6px;margin:0 0 7px;padding:4px 9px;border-radius:999px;background:rgba(156,227,107,.12);color:#b8f58f;font-size:.75rem;font-weight:700;width:max-content}
+
+
+/* TYQORA themes */
+:root{--tyqora-accent:#9ce36b;--tyqora-panel:#0d1b2a;--tyqora-bg:#07111f}
+html[data-tyqora-theme="midnight"]{--tyqora-accent:#a9b8ff;--tyqora-panel:#111326;--tyqora-bg:#070816}
+html[data-tyqora-theme="forest"]{--tyqora-accent:#9ce36b;--tyqora-panel:#10251c;--tyqora-bg:#07150e}
+html[data-tyqora-theme="violet"]{--tyqora-accent:#d1a2ff;--tyqora-panel:#21152e;--tyqora-bg:#10091a}
+html[data-tyqora-theme="ocean"]{--tyqora-accent:#65d9ee;--tyqora-panel:#0d2634;--tyqora-bg:#06151e}
+html[data-tyqora-theme] #chatOverlay .chat-shell{background:var(--tyqora-bg)}
+html[data-tyqora-theme] #chatOverlay .chat-side,html[data-tyqora-theme] #chatOverlay .chat-main{background:var(--tyqora-panel)}
+html[data-tyqora-theme] #chatOverlay .chat-brand,html[data-tyqora-theme] #chatOverlay .chat-primary{border-color:var(--tyqora-accent)}
+html[data-tyqora-theme] #chatOverlay .chat-primary{background:var(--tyqora-accent);color:#07111f}
+.tyqora-feature-body{display:grid;gap:10px;max-height:70vh;overflow:auto}
+.tyqora-feature-body .community-entry{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.tyqora-feature-body button,.theme-choice{border:1px solid rgba(156,227,107,.3);border-radius:9px;padding:8px 11px;background:rgba(156,227,107,.08);color:inherit;cursor:pointer}
+.theme-choice{margin:4px}
+.theme-choice.selected{outline:2px solid var(--tyqora-accent);background:rgba(156,227,107,.2)}
+.profile-banner{height:120px;border-radius:12px;background-size:cover;background-position:center;margin-bottom:12px;border:1px solid rgba(255,255,255,.12)}
+.profile-achievements{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.achievement-chip{padding:7px 10px;border-radius:9px;font-size:.82rem;background:rgba(255,255,255,.06)}
+.achievement-chip.unlocked{border:1px solid rgba(156,227,107,.45);color:#c6f5a8}
+.achievement-chip.locked{opacity:.55}
