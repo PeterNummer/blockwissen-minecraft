@@ -244,6 +244,12 @@ export default {
 
       if (action === "profile" && request.method === "GET") return storeCall(env, "/community/profile-get", payload);
       if (action === "profile" && request.method === "POST") return storeCall(env, "/community/profile-save", payload);
+      if (action === "friends" && request.method === "GET") return storeCall(env, "/community/friends", payload);
+      if (action === "friend-request" && request.method === "POST") return storeCall(env, "/community/friend-request", payload);
+      if (action === "friend-respond" && request.method === "POST") return storeCall(env, "/community/friend-respond", payload);
+      if (action === "friend-remove" && request.method === "POST") return storeCall(env, "/community/friend-remove", payload);
+      if (action === "theme" && request.method === "GET") return storeCall(env, "/community/theme", payload);
+      if (action === "theme" && request.method === "POST") return storeCall(env, "/community/theme", payload);
       return json({ error: "Unbekannte Community-Aktion." }, 404);
     }
 
@@ -284,7 +290,12 @@ export class AuthStore extends DurableObject {
     try { this.sql.exec("ALTER TABLE users ADD COLUMN equipped_item TEXT NOT NULL DEFAULT ''"); } catch {}
     try { this.sql.exec("ALTER TABLE users ADD COLUMN equipped_badge TEXT NOT NULL DEFAULT ''"); } catch {}
     this.sql.exec("UPDATE users SET equipped_badge=equipped_item,equipped_item='' WHERE equipped_item='star_badge' AND equipped_badge=''");
-    this.sql.exec("CREATE TABLE IF NOT EXISTS profiles (user_id TEXT PRIMARY KEY, bio TEXT NOT NULL DEFAULT '', avatar_url TEXT NOT NULL DEFAULT '', updated_at INTEGER NOT NULL)");
+    this.sql.exec("CREATE TABLE IF NOT EXISTS profiles (user_id TEXT PRIMARY KEY, bio TEXT NOT NULL DEFAULT '', avatar_url TEXT NOT NULL DEFAULT '', banner_url TEXT NOT NULL DEFAULT '', background_url TEXT NOT NULL DEFAULT '', updated_at INTEGER NOT NULL)");
+    try { this.sql.exec("ALTER TABLE profiles ADD COLUMN banner_url TEXT NOT NULL DEFAULT ''"); } catch {}
+    try { this.sql.exec("ALTER TABLE profiles ADD COLUMN background_url TEXT NOT NULL DEFAULT ''"); } catch {}
+    this.sql.exec("CREATE TABLE IF NOT EXISTS friend_requests (id TEXT PRIMARY KEY, sender_id TEXT NOT NULL, recipient_id TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', created_at INTEGER NOT NULL, UNIQUE(sender_id,recipient_id))");
+    this.sql.exec("CREATE TABLE IF NOT EXISTS user_preferences (user_id TEXT PRIMARY KEY, theme TEXT NOT NULL DEFAULT 'default', updated_at INTEGER NOT NULL)");
+    this.sql.exec("CREATE TABLE IF NOT EXISTS user_achievements (user_id TEXT NOT NULL, achievement_id TEXT NOT NULL, unlocked_at INTEGER NOT NULL, PRIMARY KEY(user_id,achievement_id))");
     this.sql.exec("CREATE TABLE IF NOT EXISTS dm_messages (id TEXT PRIMARY KEY, sender_id TEXT NOT NULL, recipient_id TEXT NOT NULL, text TEXT NOT NULL, created_at INTEGER NOT NULL, read_at INTEGER NOT NULL DEFAULT 0)");
     this.sql.exec("CREATE TABLE IF NOT EXISTS message_reactions (message_id TEXT NOT NULL, user_id TEXT NOT NULL, emoji TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY(message_id,user_id,emoji))");
     this.sql.exec("CREATE TABLE IF NOT EXISTS notifications (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, kind TEXT NOT NULL, text TEXT NOT NULL, created_at INTEGER NOT NULL, read_at INTEGER NOT NULL DEFAULT 0)");
@@ -375,18 +386,63 @@ export class AuthStore extends DurableObject {
     }
     if (path === "/community/profile-get") {
       const targetId = data.targetId || data.userId;
-      const profile = one("SELECT bio,avatar_url AS avatarUrl,updated_at AS updatedAt FROM profiles WHERE user_id=?", targetId) || { bio: "", avatarUrl: "", updatedAt: 0 };
+      const profile = one("SELECT bio,avatar_url AS avatarUrl,banner_url AS bannerUrl,background_url AS backgroundUrl,updated_at AS updatedAt FROM profiles WHERE user_id=?", targetId) || { bio: "", avatarUrl: "", bannerUrl: "", backgroundUrl: "", updatedAt: 0 };
       const user = one("SELECT id,name,role,created_at AS createdAt,equipped_item AS equippedItem,equipped_badge AS equippedBadge FROM users WHERE id=?", targetId);
       if (!user) return json({ error: "Mitglied nicht gefunden." }, 404);
       const stats = one("SELECT xp,level FROM user_stats WHERE user_id=?", targetId) || { xp: 0, level: 1 };
-      return json({ profile: { ...user, ...profile, ...stats }, own: targetId === data.userId });
+      const definitions=[["first_message","Erste Nachricht","💬"],["xp_100","100 XP gesammelt","⭐"],["level_5","Level 5 erreicht","🌟"],["level_10","Level 10 erreicht","👑"]];
+      const achievements=this.sql.exec("SELECT achievement_id AS id,unlocked_at AS unlockedAt FROM user_achievements WHERE user_id=?",targetId).toArray();
+      const unlocked=new Set(achievements.map(a=>a.id));
+      const conditions=[["first_message",stats.xp>=5],["xp_100",stats.xp>=100],["level_5",stats.level>=5],["level_10",stats.level>=10]];
+      for(const [id,ok] of conditions) if(ok&&!unlocked.has(id)) { this.sql.exec("INSERT OR IGNORE INTO user_achievements (user_id,achievement_id,unlocked_at) VALUES (?,?,?)",targetId,id,Date.now()); unlocked.add(id); }
+      const achievementList=definitions.map(([id,name,icon])=>({id,name,icon,unlocked:unlocked.has(id)}));
+      return json({ profile: { ...user, ...profile, ...stats, achievements: achievementList }, own: targetId === data.userId });
     }
     if (path === "/community/profile-save") {
       const bio = typeof data.bio === "string" ? data.bio.trim().slice(0, 240) : "";
       const avatarUrl = typeof data.avatarUrl === "string" ? data.avatarUrl.trim().slice(0, 500) : "";
-      if (avatarUrl && !/^https:\/\//i.test(avatarUrl)) return json({ error: "Profilbild muss eine HTTPS-Adresse sein." }, 400);
-      this.sql.exec("INSERT INTO profiles (user_id,bio,avatar_url,updated_at) VALUES (?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET bio=excluded.bio,avatar_url=excluded.avatar_url,updated_at=excluded.updated_at", data.userId, bio, avatarUrl, Date.now());
+      const bannerUrl = typeof data.bannerUrl === "string" ? data.bannerUrl.trim().slice(0, 500) : "";
+      const backgroundUrl = typeof data.backgroundUrl === "string" ? data.backgroundUrl.trim().slice(0, 500) : "";
+      for (const value of [avatarUrl,bannerUrl,backgroundUrl]) if (value && !/^https:\/\//i.test(value)) return json({ error: "Alle Bildadressen müssen HTTPS verwenden." }, 400);
+      this.sql.exec("INSERT INTO profiles (user_id,bio,avatar_url,banner_url,background_url,updated_at) VALUES (?,?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET bio=excluded.bio,avatar_url=excluded.avatar_url,banner_url=excluded.banner_url,background_url=excluded.background_url,updated_at=excluded.updated_at", data.userId, bio, avatarUrl, bannerUrl, backgroundUrl, Date.now());
       return json({ ok: true });
+    }
+    if (path === "/community/friends") {
+      const friends = this.sql.exec("SELECT u.id,u.name,u.role,COALESCE(p.last_seen,0) AS lastSeen FROM friend_requests f JOIN users u ON u.id=CASE WHEN f.sender_id=? THEN f.recipient_id ELSE f.sender_id END LEFT JOIN user_presence p ON p.user_id=u.id WHERE (f.sender_id=? OR f.recipient_id=?) AND f.status='accepted' AND u.banned=0 ORDER BY u.name COLLATE NOCASE", data.userId, data.userId, data.userId).toArray().map(u=>({...u,isOnline:Date.now()-u.lastSeen<90000}));
+      const requests = this.sql.exec("SELECT f.id,u.id AS userId,u.name,f.created_at AS createdAt FROM friend_requests f JOIN users u ON u.id=f.sender_id WHERE f.recipient_id=? AND f.status='pending' ORDER BY f.created_at DESC", data.userId).toArray();
+      return json({friends,requests});
+    }
+    if (path === "/community/friend-request") {
+      const target = one("SELECT id FROM users WHERE id=? AND banned=0", data.targetId);
+      if (!target || target.id===data.userId) return json({error:"Mitglied nicht gefunden."},404);
+      const existing = one("SELECT id,status FROM friend_requests WHERE (sender_id=? AND recipient_id=?) OR (sender_id=? AND recipient_id=?)",data.userId,target.id,target.id,data.userId);
+      if(existing?.status==="accepted") return json({error:"Ihr seid bereits befreundet."},409);
+      if(existing?.status==="pending" && existing.sender_id===target.id) {
+        this.sql.exec("UPDATE friend_requests SET status='accepted' WHERE id=?",existing.id);
+        return json({ok:true,accepted:true});
+      }
+      if(existing) return json({error:"Eine Anfrage besteht bereits."},409);
+      this.sql.exec("INSERT INTO friend_requests (id,sender_id,recipient_id,status,created_at) VALUES (?,?,?,'pending',?)",crypto.randomUUID(),data.userId,target.id,Date.now());
+      this.sql.exec("INSERT INTO notifications (id,user_id,kind,text,created_at) VALUES (?,?,?,?,?)",crypto.randomUUID(),target.id,"friend","Du hast eine neue Freundschaftsanfrage.",Date.now());
+      return json({ok:true});
+    }
+    if (path === "/community/friend-respond") {
+      const request = one("SELECT id FROM friend_requests WHERE id=? AND recipient_id=? AND status='pending'",data.requestId,data.userId);
+      if(!request) return json({error:"Anfrage nicht gefunden."},404);
+      if(data.accept) this.sql.exec("UPDATE friend_requests SET status='accepted' WHERE id=?",request.id);
+      else this.sql.exec("DELETE FROM friend_requests WHERE id=?",request.id);
+      return json({ok:true});
+    }
+    if (path === "/community/friend-remove") {
+      this.sql.exec("DELETE FROM friend_requests WHERE status='accepted' AND ((sender_id=? AND recipient_id=?) OR (sender_id=? AND recipient_id=?))",data.userId,data.targetId,data.targetId,data.userId);
+      return json({ok:true});
+    }
+    if (path === "/community/theme") {
+      if(request.method==="GET") return json({theme:(one("SELECT theme FROM user_preferences WHERE user_id=?",data.userId)||{}).theme||"default"});
+      const allowed=["default","midnight","forest","violet","ocean"];
+      const theme=allowed.includes(data.theme)?data.theme:"default";
+      this.sql.exec("INSERT INTO user_preferences (user_id,theme,updated_at) VALUES (?,?,?) ON CONFLICT(user_id) DO UPDATE SET theme=excluded.theme,updated_at=excluded.updated_at",data.userId,theme,Date.now());
+      return json({ok:true,theme});
     }
     if (path === "/community/reactions-get") {
       if (!data.messageId) return json({ reactions: [] });
