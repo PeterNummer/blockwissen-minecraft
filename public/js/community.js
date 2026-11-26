@@ -61,7 +61,7 @@
       const list=el('div','community-list');
       data.notifications.forEach(item=>{
         const entry=el('article','community-entry'+(!item.readAt?' unread':''));
-        entry.append(el('strong','',item.kind==='mention'?'Erwähnung':item.kind==='dm'?'Private Nachricht':item.kind==='level'?'Neues Level':'Hinweis'),el('div','',item.text),el('small','',new Date(item.createdAt).toLocaleString('de-DE')));
+        entry.append(el('strong','',item.kind==='mention'?'Erwähnung':item.kind==='dm'?'Private Nachricht':item.kind==='level'?'Neues Level':item.kind==='friend'?'Freundschaftsanfrage':'Hinweis'),el('div','',item.text),el('small','',new Date(item.createdAt).toLocaleString('de-DE')));
         list.append(entry);
       });
       hubBody.append(list);
