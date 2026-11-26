@@ -415,7 +415,7 @@ export class AuthStore extends DurableObject {
     if (path === "/community/friend-request") {
       const target = one("SELECT id FROM users WHERE id=? AND banned=0", data.targetId);
       if (!target || target.id===data.userId) return json({error:"Mitglied nicht gefunden."},404);
-      const existing = one("SELECT id,status FROM friend_requests WHERE (sender_id=? AND recipient_id=?) OR (sender_id=? AND recipient_id=?)",data.userId,target.id,target.id,data.userId);
+      const existing = one("SELECT id,status,sender_id FROM friend_requests WHERE (sender_id=? AND recipient_id=?) OR (sender_id=? AND recipient_id=?)",data.userId,target.id,target.id,data.userId);
       if(existing?.status==="accepted") return json({error:"Ihr seid bereits befreundet."},409);
       if(existing?.status==="pending" && existing.sender_id===target.id) {
         this.sql.exec("UPDATE friend_requests SET status='accepted' WHERE id=?",existing.id);
@@ -622,6 +622,18 @@ export class ChatRoom extends DurableObject {
     if (data.type === "presence_ping") {
       const authId = this.env.AUTH_STORE.idFromName("tyqora-auth");
       await this.env.AUTH_STORE.get(authId).fetch("https://auth.internal/presence", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: attachment.id }) });
+      return;
+    }
+    if (data.type === "message_pin") {
+      if (!["owner","admin","moderator"].includes(attachment.role)) {
+        ws.send(JSON.stringify({ type: "error", message: "Nur Owner, Admins und Moderatoren dürfen Nachrichten anpinnen." }));
+        return;
+      }
+      const index = history.findIndex(item => item.id === data.id);
+      if (index < 0) { ws.send(JSON.stringify({ type: "error", message: "Nachricht nicht gefunden." })); return; }
+      history[index].pinned = data.pinned !== false;
+      await this.ctx.storage.put("history", history);
+      broadcast({ type: "message_pin", id: data.id, pinned: history[index].pinned, by: attachment.name });
       return;
     }
     if (data.type === "message_edit" || data.type === "message_delete") {
