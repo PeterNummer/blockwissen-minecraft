@@ -35,7 +35,7 @@
         const {settings:s}=await api('notification-settings');body.innerHTML='<h3>Benachrichtigungen verwalten</h3><form data-form="settings" class="exp-form">'+[['mentions','Erwähnungen'],['dms','Private Nachrichten'],['friends','Freundschaftsanfragen'],['events','Events']].map(([k,n])=>'<label class="exp-check"><input type="checkbox" name="'+k+'" '+(s[k]?'checked':'')+'> '+n+'</label>').join('')+'<button class="chat-primary">Einstellungen speichern</button></form>';
       }else if(tab==='roles'){
         if(!window.tyqoraIsOwner){body.innerHTML='<p>Nur der Owner darf eigene Rollen verwalten.</p>';return;}
-        const {roles}=await api('custom-roles');body.innerHTML='<h3>Eigene Rollen (Owner)</h3><form data-form="role" class="exp-form"><label>Rollenname<input name="name" maxlength="24" required></label><label>Farbe<input name="color" type="color" value="#8bdc72"></label><button class="chat-primary">Rolle erstellen</button></form><div class="exp-list">'+roles.map(r=>'<article class="exp-card"><strong style="color:'+esc(r.color)+'">'+esc(r.name)+'</strong>'+button('Löschen','delete-role','data-id="'+r.id+'"')+'</article>').join('')+'</div><p>Eigene Rollen sind zunächst Bezeichnungen/Farben für die Community; sie vergeben keine zusätzlichen Rechte.</p>';
+        const {roles,users}=await api('custom-roles');body.innerHTML='<h3>Eigene Rollen (Owner)</h3><form data-form="role" class="exp-form"><label>Rollenname<input name="name" maxlength="24" required></label><label>Farbe<input name="color" type="color" value="#8bdc72"></label><button class="chat-primary">Rolle erstellen</button></form><h4>Rollen zuweisen</h4><div class="exp-list">'+users.map(u=>'<article class="exp-card"><strong>'+esc(u.name)+'</strong><small>Systemrolle: '+esc(u.role)+'</small><label>Eigene Rolle<select data-assign-user="'+esc(u.id)+'"><option value="">Keine eigene Rolle</option>'+roles.map(r=>'<option value="'+esc(r.id)+'" '+(u.customRoleId===r.id?'selected':'')+'>'+esc(r.name)+'</option>').join('')+'</select></label><button data-action="assign-role" data-user="'+esc(u.id)+'">Zuweisung speichern</button></article>').join('')+'</div><h4>Rollen verwalten</h4><div class="exp-list">'+roles.map(r=>'<article class="exp-card"><strong style="color:'+esc(r.color)+'">'+esc(r.name)+'</strong>'+button('Löschen','delete-role','data-id="'+r.id+'"')+'</article>').join('')+'</div><p>Eigene Rollen sind zusätzliche Bezeichnungen/Farben und geben keine Systemrechte.</p>';
       }
     }catch(e){body.innerHTML='<p class="chat-feedback">'+esc(e.message)+'</p>';}
   }
@@ -56,6 +56,7 @@
       if(a==='claim'){const result=await api('daily/claim','POST',{});if(typeof chatUser!=='undefined'&&chatUser)chatUser.coins=result.coins;}
       if(a==='join')await api('event-join','POST',{eventId:b.dataset.id});
       if(a==='delete-role'){if(!confirm('Diese eigene Rolle löschen?'))return;await api('custom-roles?id='+encodeURIComponent(b.dataset.id),'DELETE');}
+      if(a==='assign-role'){const select=[...modal.querySelectorAll('[data-assign-user]')].find(x=>x.dataset.assignUser===b.dataset.user);await api('custom-role-assign','POST',{targetUserId:b.dataset.user,roleId:select?.value||''});}
       await load(active);
     }catch(err){const p=document.createElement('p');p.className='chat-feedback';p.textContent=err.message;body.prepend(p);}
   }
