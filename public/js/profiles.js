@@ -16,6 +16,7 @@
       const equipped = p.equippedCosmetics || {};
       const frameId = equipped.profile_frame || '';
       const backgroundId = equipped.profile_background || '';
+      view.classList.remove('profile-view-background-space','profile-view-background-minecraft');
       if(backgroundId.startsWith('background_')) view.classList.add('profile-view-background-' + backgroundId.slice(11));
       if(p.bannerUrl){const banner=el('div','profile-banner');banner.style.backgroundImage='url("'+avatarSource(p.bannerUrl)+'")';banner.setAttribute('aria-label','Profilbanner');view.append(banner);}
       if(p.backgroundUrl){view.style.backgroundImage='linear-gradient(rgba(7,14,24,.82),rgba(7,14,24,.94)),url("'+avatarSource(p.backgroundUrl)+'")';view.style.backgroundSize='cover';view.style.backgroundPosition='center';}else view.style.backgroundImage='';
@@ -29,6 +30,8 @@
       const profileTitleMap={title_builder:'Weltenbauer',title_explorer:'Entdecker'};
       if(p.title) title.append(el('span','profile-profile-title',p.title));
       else if(profileTitleMap[equipped.profile_title]) title.append(el('span','profile-profile-title',profileTitleMap[equipped.profile_title]));
+      const collectibleMap={collectible_pixel:'🟪',collectible_mythic:'🔮'};
+      if(collectibleMap[equipped.collectible]) title.append(el('span','cosmetic-status-icon',collectibleMap[equipped.collectible]));
       head.append(avatar,title);view.append(head,el('div','profile-bio',p.bio||'Noch keine Profilbeschreibung.'));
       const level=Number(p.level||1),xp=Number(p.xp||0),progress=xp%100;
       const isLegend=p.role==='owner'||level>=10;const rank=isLegend?'Legende':level>=5?'Stammgast':level>=2?'Aktiv':'Neuling';
