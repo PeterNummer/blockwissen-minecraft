@@ -476,6 +476,7 @@ function connectChat() {
       renderChatMessage(data.message);
     }
     else if (data.type === 'role_update' && data.userId && data.role) {
+      chatHistoryCache.forEach(message=>{if(message.userId===data.userId)message.role=data.role;});
       updateMessageRoleBadges(data.userId, data.role);
       if (data.userId === chatUser?.id && chatUser.role !== data.role) {
         chatUser.role = data.role;
