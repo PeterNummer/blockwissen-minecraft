@@ -934,3 +934,25 @@ html[data-tyqora-theme] #chatOverlay .chat-primary{background:var(--tyqora-accen
 
 .cosmetic-name-gradient_spectrum{background-image:linear-gradient(100deg,#ff6b8a,#ffc56b,#8fe28d,#6bd5ff,#bd8cff);--cosmetic-glow:#a58cff88}
 .cosmetic-name-gradient_fire{background-image:linear-gradient(100deg,#ff5a36,#ffb347,#ffe08a,#ef4770);--cosmetic-glow:#ff744b88}
+
+
+/* TYQORA community expansion */
+.tyqora-expansion-dialog{width:min(760px,calc(100vw - 24px));max-height:88vh;overflow:auto}
+.tyqora-expansion-tabs{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
+.tyqora-expansion-tabs button{border:1px solid #46566b;border-radius:9px;padding:8px 11px;background:#1a2635;color:#e4edf8}
+.tyqora-expansion-tabs button.active{border-color:#9ce36b;background:#263b2b}
+.tyqora-expansion-body{display:grid;gap:12px;min-width:0}
+.exp-form,.exp-card{display:grid;gap:9px;padding:13px;border:1px solid #3c4d63;border-radius:12px;background:#111e2c}
+.exp-form label{display:grid;gap:5px}
+.exp-form input:not([type=checkbox]):not([type=color]),.exp-form textarea{width:100%;min-width:0;padding:10px;border:1px solid #46566b;border-radius:8px;background:#0b1521;color:#fff;font:inherit}
+.exp-form input[type=color]{width:54px;height:36px}
+.exp-form .exp-check{display:flex;align-items:center;gap:9px}
+.exp-list{display:grid;gap:9px}
+.exp-vote{display:flex;justify-content:space-between;gap:12px;text-align:left;padding:9px;border:1px solid #42546a;border-radius:8px;background:#1a2a3d;color:#eef6ff}
+.exp-vote.selected{border-color:#9ce36b;background:#263b2b}
+.exp-progress{height:10px;border-radius:20px;overflow:hidden;background:#29384a}
+.exp-progress span{display:block;height:100%;background:#9ce36b}
+.exp-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.exp-stats div{display:grid;gap:4px;padding:12px;border:1px solid #40516a;border-radius:10px;background:#142235;text-align:center}
+.exp-stats strong{font-size:1.35rem}.exp-stats span{font-size:.78rem;color:#b9c9dc}
+@media(max-width:600px){.tyqora-expansion-dialog{padding:14px}.tyqora-expansion-tabs button{flex:1 1 42%;font-size:.8rem}.exp-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
