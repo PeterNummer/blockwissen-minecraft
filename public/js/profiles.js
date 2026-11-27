@@ -35,6 +35,7 @@
       head.append(avatar,title);view.append(head,el('div','profile-bio',p.bio||'Noch keine Profilbeschreibung.'));
       const level=Number(p.level||1),xp=Number(p.xp||0),progress=xp%100;
       const isLegend=p.role==='owner'||level>=10;const rank=isLegend?'Legende':level>=5?'Stammgast':level>=2?'Aktiv':'Neuling';
+      if(p.customRole){const custom=el('span','profile-custom-role',p.customRole.name);custom.style.color=p.customRole.color;title.append(custom);}
       title.append(el('p','profile-status','Status: '+rank));
       const stats=el('div','profile-progress');stats.append(el('strong','','Level '+level),el('div','','XP: '+xp+' · Noch '+(100-progress)+' XP bis Level '+(level+1)),el('div','profile-message-total','💬 '+Number(p.messageCount||0)+' Nachrichten insgesamt'));
       const track=el('div','profile-progress-track'),fill=el('span','');fill.style.width=progress+'%';track.append(fill);stats.append(track);
@@ -56,15 +57,17 @@
         const trophyData=await api('trophies?id='+encodeURIComponent(p.id));
         const showcase=el('div','profile-trophy-showcase');showcase.append(el('h3','','🏆 Trophäen-Vitrine'));
         const labels={first_message:'Erste Nachricht',xp_100:'100 XP',level_5:'Level 5',level_10:'Level 10'};
+        const trophyLimit=p.role==='owner'?4:3;
         const selected=trophyData.selected||[];
-        if(selected.length) selected.forEach(t=>showcase.append(el('span','achievement-chip unlocked','🏆 '+(labels[t.id]||t.id))));
+        if(p.role==='owner'){['first_message','xp_100','level_5','level_10'].forEach(id=>showcase.append(el('span','achievement-chip unlocked','🏆 '+labels[id])));}
+        else if(selected.length) selected.forEach(t=>showcase.append(el('span','achievement-chip unlocked','🏆 '+(labels[t.id]||t.id))));
         else showcase.append(el('p','','Noch keine Trophäen ausgewählt.'));
         if(data.own){
-          const edit=el('div','profile-trophy-edit');edit.append(el('strong','','Vitrine bearbeiten (max. 3)'));
-          const chosen=new Set(selected.map(t=>t.id));
+          const edit=el('div','profile-trophy-edit');edit.append(el('strong','',`Vitrine bearbeiten (max. ${trophyLimit})`));
+          const chosen=new Set(p.role==='owner'?['first_message','xp_100','level_5','level_10']:selected.map(t=>t.id));
           (trophyData.unlocked||[]).forEach(id=>{const label=el('label','profile-trophy-option');const check=document.createElement('input');check.type='checkbox';check.value=id;check.checked=chosen.has(id);label.append(check,document.createTextNode(' '+(labels[id]||id)));edit.append(label);});
           const saveTrophies=el('button','chat-primary','Vitrine speichern');saveTrophies.type='button';
-          saveTrophies.addEventListener('click',async()=>{const ids=[...edit.querySelectorAll('input:checked')].map(x=>x.value);if(ids.length>3){feedbackTrophy.textContent='Maximal 3 Trophäen auswählen.';return;}try{await api('trophies','POST',{ids});await openProfile();}catch(err){feedbackTrophy.textContent=err.message;}});
+          saveTrophies.addEventListener('click',async()=>{const ids=[...edit.querySelectorAll('input:checked')].map(x=>x.value);if(ids.length>trophyLimit){feedbackTrophy.textContent='Maximal '+trophyLimit+' Trophäen auswählen.';return;}try{await api('trophies','POST',{ids});await openProfile();}catch(err){feedbackTrophy.textContent=err.message;}});
           const feedbackTrophy=el('p','chat-feedback','');edit.append(saveTrophies,feedbackTrophy);showcase.append(edit);
         }
         view.append(showcase);
