@@ -156,7 +156,8 @@ const chatLogin = document.getElementById('chatLogin');
 const chatRoom = document.getElementById('chatRoom');
 const adminPanel = document.getElementById('adminPanel');
 const shopPanel = document.getElementById('shopPanel');
-let shopState = { coins: 100, owned: [], equippedItem: '', items: [] };
+let shopState = { coins: 100, owned: [], equippedItem: '', equippedBadge: '', equippedCosmetics: {}, items: [] };
+let activeShopFilter = 'all';
 const chatLoginForm = document.getElementById('chatLoginForm');
 const chatLoginFeedback = document.getElementById('chatLoginFeedback');
 const chatMessages = document.getElementById('chatMessages');
@@ -281,7 +282,13 @@ function renderMentionText(container,text){
 }
 function renderChatMessage(message) {
   const row = document.createElement('article');
-  row.className = 'chat-message' + (message.bot ? ' bot-message' : '') + (message.pinned ? ' message-pinned' : '');
+  const cosmetics = message.equippedCosmetics || {};
+  row.className = 'chat-message' + (message.bot ? ' bot-message' : '') + (message.pinned ? ' message-pinned' : '') + (message.sticker ? ' sticker-message' : '');
+  const cosmeticItem = slot => shopState.items.find(item => item.id === cosmetics[slot]) || null;
+  const themeItem = cosmeticItem('chat_theme'), effectItem = cosmeticItem('chat_effect'), entryItem = cosmeticItem('entry_effect'), fontItem = cosmeticItem('message_font');
+  if (themeItem) row.classList.add('cosmetic-theme-' + themeItem.value);
+  if (effectItem) row.classList.add('cosmetic-effect-' + effectItem.value);
+  if (entryItem) row.classList.add('cosmetic-entry-' + entryItem.value);
   row.dataset.messageId = message.id;
   if (message.userId) row.dataset.userId = message.userId;
   const meta = document.createElement('div');
@@ -290,6 +297,9 @@ function renderChatMessage(message) {
   name.textContent = message.name || 'Mitglied';
   const nameCosmetic = shopState.items.find(item => item.id === message.equippedItem && item.type === 'name') || null;
   const badgeCosmetic = shopState.items.find(item => item.id === message.equippedBadge && item.type === 'badge') || null;
+  const statusCosmetic = cosmeticItem('status_icon');
+  const titleCosmetic = cosmeticItem('profile_title');
+  const collectibleCosmetic = cosmeticItem('collectible');
   if (nameCosmetic) name.classList.add('cosmetic-name', 'cosmetic-name-' + nameCosmetic.id);
   meta.append(name);
   if (badgeCosmetic) {
@@ -299,6 +309,9 @@ function renderChatMessage(message) {
     badge.title = badgeCosmetic.name;
     meta.append(badge);
   }
+  if (statusCosmetic) { const status = document.createElement('span'); status.className = 'cosmetic-status-icon'; status.textContent = statusCosmetic.value; status.title = statusCosmetic.name; meta.append(status); }
+  if (collectibleCosmetic) { const collectible = document.createElement('span'); collectible.className = 'cosmetic-badge cosmetic-collectible'; collectible.textContent = collectibleCosmetic.badge || collectibleCosmetic.icon; collectible.title = collectibleCosmetic.name; meta.append(collectible); }
+  if (titleCosmetic) { const title = document.createElement('span'); title.className = 'cosmetic-profile-title'; title.textContent = titleCosmetic.value; meta.append(title); }
   if (message.bot) {
     const verified = document.createElement('span');
     verified.className = 'bot-verified';
@@ -316,7 +329,10 @@ function renderChatMessage(message) {
   time.textContent = new Date(message.time).toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
   const body = document.createElement('p');
   body.className = 'chat-message-body';
-  renderMentionText(body, message.text || '');
+  if (fontItem) body.classList.add('cosmetic-font-' + fontItem.value);
+  if (message.sticker) body.classList.add('chat-sticker');
+  if (message.sticker) body.textContent = message.text || '';
+  else renderMentionText(body, message.text || '');
   if (message.editedAt) {
     const edited = document.createElement('span');
     edited.className = 'message-edited';
@@ -444,6 +460,7 @@ function connectChat() {
       setChatConnection('offline', 'Nicht verbunden');
     } else if (data.type === 'history') {
       chatAuthenticated = true;
+      loadShop().catch(() => {});
       chatLogin.hidden = true;
       adminPanel.hidden = true;
       shopPanel.hidden = true;
@@ -524,27 +541,51 @@ function connectChat() {
 
 async function loadShop() {
   const data = await api('/api/shop', null, 'GET');
-  shopState = data;
+  shopState = { ...data, equippedCosmetics: data.equippedCosmetics || {} };
   chatUser.coins = data.coins;
+  chatUser.equippedCosmetics = shopState.equippedCosmetics;
   showAccount();
   document.getElementById('shopBalance').textContent = '🪙 ' + data.coins + ' Coins';
   const container = document.getElementById('shopItems');
+  const filters = document.getElementById('shopFilters');
   container.replaceChildren();
+  const labels = { name:'Namensfarben', badge:'Badges', profile_frame:'Profilrahmen', profile_background:'Profil-Hintergründe', chat_effect:'Chat-Effekte', chat_theme:'Chat-Designs', sticker_pack:'Sticker-Pakete', status_icon:'Statussymbole', profile_title:'Profil-Titel', entry_effect:'Eintrittseffekte', collectible:'Sammlerstücke', profile_music:'Profil-Musik', message_font:'Schriftarten' };
+  const types = [...new Set(data.items.filter(item => !item.ownerOnly || chatUser?.role === 'owner').map(item => item.type))];
+  filters.replaceChildren();
+  [['all','Alle'], ...types.map(type => [type,labels[type] || type])].forEach(([value,label]) => {
+    const tab = document.createElement('button'); tab.type='button'; tab.className='shop-filter' + (activeShopFilter===value?' active':''); tab.textContent=label;
+    tab.addEventListener('click',()=>{activeShopFilter=value;loadShop();});
+    filters.append(tab);
+  });
+  const stickerTray = document.getElementById('chatStickerTray');
+  const stickerToggle = document.getElementById('chatStickerToggle');
+  const stickerEnabled = Object.values(shopState.equippedCosmetics).some(id => id === 'sticker_minecraft' || id === 'sticker_fun');
+  if (stickerTray && stickerToggle) {
+    stickerToggle.hidden = !stickerEnabled;
+    stickerTray.hidden = true;
+    stickerTray.replaceChildren();
+    if (stickerEnabled) ['⛏️','🧱','🌳','💎','🐉','🎉','😂','❤️','⭐','🔥','🚀','🌙'].forEach(emoji => {
+      const button=document.createElement('button');button.type='button';button.className='sticker-choice';button.textContent=emoji;
+      button.addEventListener('click',()=>{if(chatSocket?.readyState===WebSocket.OPEN)chatSocket.send(JSON.stringify({type:'sticker',emoji}));stickerTray.hidden=true;});
+      stickerTray.append(button);
+    });
+  }
   data.items.forEach(item => {
     if (item.ownerOnly && chatUser?.role !== 'owner') return;
+    if (activeShopFilter !== 'all' && item.type !== activeShopFilter) return;
     const card = document.createElement('article'); card.className = 'shop-item';
     const icon = document.createElement('div'); icon.className = 'shop-item-icon'; icon.textContent = item.icon;
     const title = document.createElement('h3'); title.textContent = item.name;
     if (item.type === 'name') title.classList.add('cosmetic-name', 'cosmetic-name-' + item.id, 'shop-cosmetic-preview');
     const description = document.createElement('p'); description.textContent = item.description;
+    const category = document.createElement('small'); category.className='shop-item-category'; category.textContent=labels[item.type] || item.type;
     const price = document.createElement('strong'); price.className = 'shop-price'; price.textContent = '🪙 ' + item.price;
     const button = document.createElement('button'); button.type = 'button'; button.className = 'chat-primary shop-action';
     const owned = data.owned.includes(item.id);
-    const equipped = item.type === 'badge' ? data.equippedBadge === item.id : data.equippedItem === item.id;
+    const equipped = item.type === 'badge' ? data.equippedBadge === item.id : item.type === 'name' ? data.equippedItem === item.id : shopState.equippedCosmetics[item.type] === item.id;
     button.textContent = !owned ? 'Kaufen' : (equipped ? 'Ablegen' : 'Anlegen');
     button.classList.toggle('shop-action-unequip', owned && equipped);
-    button.classList.toggle('shop-action-equip', owned && !equipped && item.type !== 'name');
-    button.disabled = false;
+    button.classList.toggle('shop-action-equip', owned && !equipped);
     button.addEventListener('click', async () => {
       button.disabled = true;
       try {
@@ -561,7 +602,7 @@ async function loadShop() {
         button.disabled = false;
       }
     });
-    card.append(icon, title, description, price, button);
+    card.append(icon, title, description, category, price, button);
     container.append(card);
   });
 }
@@ -572,6 +613,7 @@ document.getElementById('openShop').addEventListener('click', async () => {
 });
 document.getElementById('shopBack').addEventListener('click', () => { shopPanel.hidden = true; chatRoom.hidden = false; });
 document.getElementById('shopRefresh').addEventListener('click', () => loadShop().catch(error => { document.getElementById('shopFeedback').textContent = error.message; }));
+document.getElementById('chatStickerToggle')?.addEventListener('click',()=>{const tray=document.getElementById('chatStickerTray');if(tray)tray.hidden=!tray.hidden;});
 
 async function loadAdminUsers() {
   const result = await api('/api/admin/users', null, 'GET');
