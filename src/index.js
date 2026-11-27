@@ -609,8 +609,10 @@ export class AuthStore extends DurableObject {
       return json({ users });
     }
     if (path === "/community/notifications") {
-      const items = this.sql.exec("SELECT id,kind,text,created_at AS createdAt,read_at AS readAt FROM notifications WHERE user_id=? ORDER BY created_at DESC LIMIT 50", data.userId).toArray();
-      return json({ notifications: items, unread: items.filter(item => !item.readAt).length });
+      const items = this.sql.exec("SELECT id,kind,text,created_at AS createdAt,read_at AS readAt FROM notifications WHERE user_id=? ORDER BY created_at DESC LIMIT 100", data.userId).toArray();
+      const prefs=one("SELECT mentions,dms,friends,events FROM notification_settings WHERE user_id=?",data.userId)||{mentions:1,dms:1,friends:1,events:1};
+      const notifications=items.filter(item=>item.kind==="mention"?prefs.mentions:item.kind==="dm"?prefs.dms:item.kind==="friend"?prefs.friends:item.kind==="event"?prefs.events:true).slice(0,50);
+      return json({ notifications, unread: notifications.filter(item => !item.readAt).length });
     }
     if (path === "/community/notifications-read") {
       this.sql.exec("UPDATE notifications SET read_at=? WHERE user_id=? AND read_at=0", Date.now(), data.userId);
