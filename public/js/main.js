@@ -158,6 +158,7 @@ const adminPanel = document.getElementById('adminPanel');
 const shopPanel = document.getElementById('shopPanel');
 let shopState = { coins: 100, owned: [], equippedItem: '', equippedBadge: '', equippedCosmetics: {}, items: [] };
 let activeShopFilter = 'all';
+let chatHistoryCache = [];
 const chatLoginForm = document.getElementById('chatLoginForm');
 const chatLoginFeedback = document.getElementById('chatLoginFeedback');
 const chatMessages = document.getElementById('chatMessages');
@@ -466,7 +467,8 @@ function connectChat() {
       shopPanel.hidden = true;
       chatRoom.hidden = false;
       setChatConnection('online', 'Verbunden');
-      (Array.isArray(data.messages) ? data.messages : []).forEach(renderChatMessage);
+      chatHistoryCache = Array.isArray(data.messages) ? data.messages : [];
+      chatHistoryCache.forEach(renderChatMessage);
       chatMessageInput.focus();
     } else if (data.type === 'message' && data.message) renderChatMessage(data.message);
     else if (data.type === 'role_update' && data.userId && data.role) {
@@ -478,25 +480,48 @@ function connectChat() {
       }
     }
     else if (data.type === 'cosmetic_update' && data.userId) {
+      if (data.userId === chatUser?.id) {
+        if (data.itemType === 'name') chatUser.equippedItem = data.itemId || '';
+        else if (data.itemType === 'badge') chatUser.equippedBadge = data.itemId || '';
+        else {
+          chatUser.equippedCosmetics = chatUser.equippedCosmetics || {};
+          if (data.itemId) chatUser.equippedCosmetics[data.itemType] = data.itemId;
+          else delete chatUser.equippedCosmetics[data.itemType];
+        }
+        loadShop().catch(() => {});
+      }
       chatMessages.querySelectorAll('.chat-message').forEach(row => {
         if (row.dataset.userId !== data.userId) return;
         const meta = row.querySelector('.chat-message-meta');
         const name = meta?.querySelector('strong');
-        if (!name) return;
-        if (data.itemType === 'badge') {
-          meta.querySelector('.cosmetic-badge')?.remove();
-          const badgeItem = shopState.items.find(entry => entry.id === data.itemId && entry.type === 'badge');
-          if (badgeItem) {
-            const badge = document.createElement('span');
-            badge.className = 'cosmetic-badge';
-            badge.textContent = badgeItem.badge;
-            badge.title = badgeItem.name;
-            name.after(badge);
-          }
-        } else {
+        const body = row.querySelector('.chat-message-body');
+        if (!name || !meta) return;
+        if (data.itemType === 'name') {
           const nameItem = shopState.items.find(entry => entry.id === data.itemId && entry.type === 'name');
           name.classList.remove('cosmetic-name', ...Array.from(name.classList).filter(className => className.startsWith('cosmetic-name-')));
           if (nameItem) name.classList.add('cosmetic-name', 'cosmetic-name-' + nameItem.id);
+        } else if (data.itemType === 'badge') {
+          meta.querySelector('.cosmetic-badge')?.remove();
+          const badgeItem = shopState.items.find(entry => entry.id === data.itemId && entry.type === 'badge');
+          if (badgeItem) { const badge=document.createElement('span');badge.className='cosmetic-badge';badge.textContent=badgeItem.badge;badge.title=badgeItem.name;name.after(badge); }
+        } else {
+          const classPrefix = data.itemType === 'chat_theme' ? 'cosmetic-theme-' : data.itemType === 'chat_effect' ? 'cosmetic-effect-' : data.itemType === 'entry_effect' ? 'cosmetic-entry-' : data.itemType === 'message_font' ? 'cosmetic-font-' : '';
+          if (classPrefix) {
+            const item = shopState.items.find(entry => entry.id === data.itemId);
+            row.classList.remove(...Array.from(row.classList).filter(value => value.startsWith(classPrefix)));
+            body?.classList.remove(...Array.from(body.classList).filter(value => value.startsWith(classPrefix)));
+            if (item) (data.itemType === 'message_font' ? body : row)?.classList.add(classPrefix + item.value);
+          }
+          if (data.itemType === 'status_icon') {
+            meta.querySelector('.cosmetic-status-icon')?.remove();
+            const item=shopState.items.find(entry=>entry.id===data.itemId);
+            if(item){const span=document.createElement('span');span.className='cosmetic-status-icon';span.textContent=item.value;span.title=item.name;name.after(span);}
+          }
+          if (data.itemType === 'profile_title') {
+            meta.querySelector('.cosmetic-profile-title')?.remove();
+            const item=shopState.items.find(entry=>entry.id===data.itemId);
+            if(item){const span=document.createElement('span');span.className='cosmetic-profile-title';span.textContent=item.value;meta.append(span);}
+          }
         }
       });
     }
@@ -605,6 +630,10 @@ async function loadShop() {
     card.append(icon, title, description, category, price, button);
     container.append(card);
   });
+  if (chatHistoryCache.length && !chatRoom.hidden) {
+    chatMessages.replaceChildren();
+    chatHistoryCache.forEach(renderChatMessage);
+  }
 }
 document.getElementById('openShop').addEventListener('click', async () => {
   chatRoom.hidden = true; adminPanel.hidden = true; shopPanel.hidden = false;
