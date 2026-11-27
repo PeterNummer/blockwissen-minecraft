@@ -488,6 +488,12 @@ function connectChat() {
           if (data.itemId) chatUser.equippedCosmetics[data.itemType] = data.itemId;
           else delete chatUser.equippedCosmetics[data.itemType];
         }
+        chatHistoryCache.forEach(message=>{
+          if(message.userId!==data.userId)return;
+          if(data.itemType==='name')message.equippedItem=data.itemId||'';
+          else if(data.itemType==='badge')message.equippedBadge=data.itemId||'';
+          else {message.equippedCosmetics=message.equippedCosmetics||{};if(data.itemId)message.equippedCosmetics[data.itemType]=data.itemId;else delete message.equippedCosmetics[data.itemType];}
+        });
         loadShop().catch(() => {});
       }
       chatMessages.querySelectorAll('.chat-message').forEach(row => {
@@ -569,6 +575,7 @@ async function loadShop() {
   shopState = { ...data, equippedCosmetics: data.equippedCosmetics || {} };
   chatUser.coins = data.coins;
   chatUser.equippedCosmetics = shopState.equippedCosmetics;
+  chatHistoryCache.forEach(message=>{if(message.userId===chatUser.id){message.equippedCosmetics=shopState.equippedCosmetics;message.equippedItem=data.equippedItem||'';message.equippedBadge=data.equippedBadge||'';}});
   showAccount();
   document.getElementById('shopBalance').textContent = '🪙 ' + data.coins + ' Coins';
   const container = document.getElementById('shopItems');
