@@ -10,7 +10,7 @@
     modal=document.createElement('div');modal.className='community-modal tyqora-expansion-modal';modal.id='tyqoraExpansion';modal.hidden=true;
     modal.innerHTML='<section class="community-dialog tyqora-expansion-dialog"><button class="close community-close" data-action="close" type="button">✕</button><h2>TYQORA Community</h2><nav class="tyqora-expansion-tabs"><button data-tab="polls">Umfragen</button><button data-tab="daily">Tagesmission</button><button data-tab="stats">Statistiken</button><button data-tab="events">Events</button><button data-tab="settings">Benachrichtigungen</button><button data-tab="roles" class="owner-only-tab">Eigene Rollen</button></nav><div class="tyqora-expansion-body" id="tyqoraExpansionBody"></div></section>';
     document.body.append(modal);body=modal.querySelector('#tyqoraExpansionBody');
-    b.addEventListener('click',()=>{modal.hidden=false;load(active);});
+    b.addEventListener('click',()=>{modal.hidden=false;load(active);});document.getElementById('openChatPolls')?.addEventListener('click',()=>{modal.hidden=false;load('polls');});
     modal.addEventListener('click',e=>{if(e.target===modal||e.target.closest('[data-action="close"]'))modal.hidden=true;});
     modal.querySelectorAll('[data-tab]').forEach(x=>x.addEventListener('click',()=>load(x.dataset.tab)));
     modal.addEventListener('submit',submit);
