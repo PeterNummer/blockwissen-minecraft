@@ -956,3 +956,16 @@ html[data-tyqora-theme] #chatOverlay .chat-primary{background:var(--tyqora-accen
 .exp-stats div{display:grid;gap:4px;padding:12px;border:1px solid #40516a;border-radius:10px;background:#142235;text-align:center}
 .exp-stats strong{font-size:1.35rem}.exp-stats span{font-size:.78rem;color:#b9c9dc}
 @media(max-width:600px){.tyqora-expansion-dialog{padding:14px}.tyqora-expansion-tabs button{flex:1 1 42%;font-size:.8rem}.exp-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+
+.profile-banner-effect-shimmer{position:relative;overflow:hidden}
+.profile-banner-effect-shimmer:after{content:"";position:absolute;inset:-40%;background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.32) 48%,transparent 60%);animation:tyqoraBannerShimmer 4s linear infinite}
+.profile-banner-effect-float{animation:tyqoraBannerFloat 5s ease-in-out infinite alternate}
+.profile-banner-effect-stars{position:relative;overflow:hidden}
+.profile-banner-effect-stars:after{content:"✦  ·  ✧     ✦       ·  ✧";position:absolute;inset:18px 0;color:#fff;text-shadow:0 0 8px #fff;letter-spacing:16px;animation:tyqoraBannerStars 3s ease-in-out infinite alternate}
+@keyframes tyqoraBannerShimmer{from{transform:translateX(-35%)}to{transform:translateX(35%)}}
+@keyframes tyqoraBannerFloat{from{background-position:45% 45%}to{background-position:55% 55%}}
+@keyframes tyqoraBannerStars{from{opacity:.25;transform:translateY(4px)}to{opacity:.9;transform:translateY(-4px)}}
+.profile-trophy-showcase{display:grid;gap:8px;margin:14px 0;padding:12px;border:1px solid #46566b;border-radius:12px;background:#111e2c}
+.profile-trophy-edit{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.profile-trophy-option{display:inline-flex;align-items:center;gap:5px;padding:6px 8px;border-radius:8px;background:#1a2a3d}
