@@ -470,7 +470,11 @@ function connectChat() {
       chatHistoryCache = Array.isArray(data.messages) ? data.messages : [];
       chatHistoryCache.forEach(renderChatMessage);
       chatMessageInput.focus();
-    } else if (data.type === 'message' && data.message) renderChatMessage(data.message);
+    } else if (data.type === 'message' && data.message) {
+      chatHistoryCache.push(data.message);
+      if (chatHistoryCache.length > 100) chatHistoryCache.shift();
+      renderChatMessage(data.message);
+    }
     else if (data.type === 'role_update' && data.userId && data.role) {
       updateMessageRoleBadges(data.userId, data.role);
       if (data.userId === chatUser?.id && chatUser.role !== data.role) {
@@ -537,6 +541,8 @@ function connectChat() {
       });
     }
     else if (data.type === 'message_pin' && data.id) {
+      const cached = chatHistoryCache.find(message => message.id === data.id);
+      if (cached) cached.pinned = !!data.pinned;
       const row = chatMessages.querySelector('[data-message-id="' + CSS.escape(data.id) + '"]');
       if (row) {
         row.classList.toggle('message-pinned', !!data.pinned);
@@ -547,6 +553,8 @@ function connectChat() {
       }
     }
     else if (data.type === 'message_update' && data.message) {
+      const cached = chatHistoryCache.find(message => message.id === data.message.id);
+      if (cached) { cached.text = data.message.text; cached.editedAt = data.message.editedAt; }
       const existing = chatMessages.querySelector('[data-message-id="' + CSS.escape(data.message.id) + '"]');
       if (existing) {
         const body = existing.querySelector('.chat-message-body');
@@ -560,6 +568,7 @@ function connectChat() {
         }
       }
     } else if (data.type === 'message_delete' && data.id) {
+      chatHistoryCache = chatHistoryCache.filter(message => message.id !== data.id);
       chatMessages.querySelector('[data-message-id="' + CSS.escape(data.id) + '"]')?.remove();
     }
   });
