@@ -895,3 +895,38 @@ html[data-tyqora-theme] #chatOverlay .chat-primary{background:var(--tyqora-accen
 .achievement-chip{padding:7px 10px;border-radius:9px;font-size:.82rem;background:rgba(255,255,255,.06)}
 .achievement-chip.unlocked{border:1px solid rgba(156,227,107,.45);color:#c6f5a8}
 .achievement-chip.locked{opacity:.55}
+
+
+/* TYQORA expanded cosmetic shop */
+.shop-filters{display:flex;gap:7px;flex-wrap:wrap;margin:14px 0 18px}
+.shop-filter{border:1px solid #46566b;border-radius:999px;padding:8px 12px;background:#1a2431;color:#dce7f5;font:inherit;font-size:.82rem;cursor:pointer}
+.shop-filter.active{border-color:#8bdc72;background:#263b2b;color:#d9ffd0}
+.shop-item-category{display:inline-flex;padding:4px 8px;border-radius:7px;background:#172332;color:#9eb5cf;font-size:.72rem}
+.shop-item h3.shop-cosmetic-preview{min-height:1.5em}
+.chat-sticker-toggle{flex:0 0 42px}
+.chat-sticker-tray{display:flex;flex-wrap:wrap;gap:7px;padding:10px 12px;border-top:1px solid #344256;background:#151e2a}
+.chat-sticker-tray[hidden]{display:none}
+.sticker-choice{min-width:42px;min-height:42px;border:1px solid #46566b;border-radius:10px;background:#202d3d;color:#fff;font-size:1.35rem;cursor:pointer}
+.sticker-message .chat-message-body.chat-sticker{font-size:2.5rem;line-height:1.25;min-height:1.4em}
+.cosmetic-status-icon{margin-left:5px;font-size:.9em}
+.cosmetic-profile-title{margin-left:6px;padding:2px 6px;border:1px solid #7892ad66;border-radius:6px;background:#25364a;color:#c5ddf7;font-size:.68rem;font-weight:750}
+.cosmetic-collectible{filter:drop-shadow(0 0 5px #b58cff99)}
+.cosmetic-theme-cyber{border-color:#8c55d9;background:linear-gradient(110deg,#21142e,#182638)}
+.cosmetic-theme-amoled{border-color:#343434;background:#08090b}
+.cosmetic-effect-sparkle{box-shadow:0 0 0 1px #e6d6ff55,0 0 16px #b78cff22}
+.cosmetic-effect-glow{box-shadow:0 0 0 1px #71cfff88,0 0 18px #42aaff44}
+.cosmetic-entry-portal{animation:tyqoraPortalIn .55s ease-out both}
+.cosmetic-entry-spark{animation:tyqoraSparkIn .5s ease-out both}
+@keyframes tyqoraPortalIn{from{opacity:.35;transform:translateY(7px) scale(.985);filter:hue-rotate(70deg)}to{opacity:1;transform:none;filter:none}}
+@keyframes tyqoraSparkIn{from{opacity:.45;transform:translateY(5px)}to{opacity:1;transform:none}}
+.cosmetic-font-pixel{font-family:"Courier New",monospace;letter-spacing:.02em}
+.cosmetic-font-serif{font-family:Georgia,"Times New Roman",serif}
+.profile-avatar.frame-neon{border:3px solid #65d9ff;box-shadow:0 0 12px #42c8ff99}
+.profile-avatar.frame-gold{border:3px solid #f3cb69;box-shadow:0 0 12px #e7b54d88}
+.profile-avatar.frame-ice{border:3px solid #a9efff;box-shadow:0 0 12px #9aeaff99}
+.profile-view-background-space{background-color:#111a35;background-image:radial-gradient(circle at 20% 15%,#7356a844,transparent 35%),radial-gradient(circle at 80% 70%,#2d6c9c44,transparent 40%)}
+.profile-view-background-minecraft{background-color:#172c20;background-image:linear-gradient(135deg,#244b2c,#172c20 55%,#263d55)}
+.profile-profile-title{display:inline-flex;margin-top:6px;padding:4px 8px;border-radius:7px;background:#273a50;color:#d5eaff;font-size:.78rem}
+.profile-music-player{display:grid;gap:8px;margin:12px 0;padding:12px;border:1px solid #40516a;border-radius:10px;background:#121d2a}
+.profile-music-player audio{width:100%;max-width:100%}
+@media(max-width:600px){.shop-filters{gap:6px}.shop-filter{padding:7px 10px;font-size:.76rem}.chat-sticker-tray{max-height:150px;overflow:auto}}
