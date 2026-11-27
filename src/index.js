@@ -274,7 +274,7 @@ export default {
       if (action === "event-join" && request.method === "POST") return storeCall(env, "/community/event-join", payload);
       if (action === "notification-settings" && request.method === "GET") return storeCall(env, "/community/notification-settings", payload);
       if (action === "notification-settings" && request.method === "POST") return storeCall(env, "/community/notification-settings-save", payload);
-      if (action === "trophies" && request.method === "GET") return storeCall(env, "/community/trophies", payload);
+      if (action === "trophies" && request.method === "GET") { payload.targetId=url.searchParams.get("id")||auth.user.id; return storeCall(env, "/community/trophies", payload); }
       if (action === "trophies" && request.method === "POST") return storeCall(env, "/community/trophies-save", payload);
       if (action === "members" && request.method === "GET") return storeCall(env, "/community/members", payload);
       if (action === "notifications" && request.method === "GET") return storeCall(env, "/community/notifications", payload);
@@ -570,11 +570,15 @@ export class AuthStore extends DurableObject {
     if (path === "/community/events-create") {
       const title=String(data.title||"").trim().slice(0,70),description=String(data.description||"").trim().slice(0,300),starts=Number(data.startsAt),ends=Number(data.endsAt);
       if(title.length<3||!Number.isFinite(starts)||!Number.isFinite(ends)||starts<Date.now()-60000||ends<=starts||ends>starts+30*86400000)return json({error:"Bitte gültigen Titel und Event-Zeitraum (maximal 30 Tage) angeben."},400);
-      const id=crypto.randomUUID();this.sql.exec("INSERT INTO community_events (id,title,description,starts_at,ends_at,created_by,created_at) VALUES (?,?,?,?,?,?,?)",id,title,description,starts,ends,data.userId,Date.now());return json({ok:true,id});
+      const id=crypto.randomUUID();this.sql.exec("INSERT INTO community_events (id,title,description,starts_at,ends_at,created_by,created_at) VALUES (?,?,?,?,?,?,?)",id,title,description,starts,ends,data.userId,Date.now());
+      const members=this.sql.exec("SELECT id FROM users WHERE banned=0 AND id<>?",data.userId).toArray();for(const member of members)this.sql.exec("INSERT INTO notifications (id,user_id,kind,text,created_at) VALUES (?,?,?,?,?)",crypto.randomUUID(),member.id,"event","Neues Community-Event: "+title,Date.now());
+      return json({ok:true,id});
     }
     if (path === "/community/event-join") {
       if(!one("SELECT id FROM community_events WHERE id=? AND ends_at>=?",data.eventId,Date.now()))return json({error:"Event nicht gefunden oder beendet."},404);
-      this.sql.exec("INSERT OR IGNORE INTO event_participants (event_id,user_id,joined_at) VALUES (?,?,?)",data.eventId,data.userId,Date.now());return json({ok:true});
+      this.sql.exec("INSERT OR IGNORE INTO event_participants (event_id,user_id,joined_at) VALUES (?,?,?)",data.eventId,data.userId,Date.now());
+      const event=one("SELECT created_by,title FROM community_events WHERE id=?",data.eventId);if(event&&event.created_by!==data.userId)this.sql.exec("INSERT INTO notifications (id,user_id,kind,text,created_at) VALUES (?,?,?,?,?)",crypto.randomUUID(),event.created_by,"event","Ein Mitglied nimmt an deinem Event teil: "+event.title,Date.now());
+      return json({ok:true});
     }
     if (path === "/community/notification-settings") {
       return json({settings:one("SELECT mentions,dms,friends,events FROM notification_settings WHERE user_id=?",data.userId)||{mentions:1,dms:1,friends:1,events:1}});
@@ -584,8 +588,9 @@ export class AuthStore extends DurableObject {
       this.sql.exec("INSERT INTO notification_settings (user_id,mentions,dms,friends,events) VALUES (?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET mentions=excluded.mentions,dms=excluded.dms,friends=excluded.friends,events=excluded.events",data.userId,...values);return json({ok:true});
     }
     if (path === "/community/trophies") {
-      const unlocked=this.sql.exec("SELECT achievement_id AS id FROM user_achievements WHERE user_id=?",data.userId).toArray().map(x=>x.id);
-      const selected=this.sql.exec("SELECT achievement_id AS id,position FROM trophy_showcase WHERE user_id=? ORDER BY position",data.userId).toArray();return json({unlocked,selected});
+      const targetId=data.targetId||data.userId;
+      const unlocked=this.sql.exec("SELECT achievement_id AS id FROM user_achievements WHERE user_id=?",targetId).toArray().map(x=>x.id);
+      const selected=this.sql.exec("SELECT achievement_id AS id,position FROM trophy_showcase WHERE user_id=? ORDER BY position",targetId).toArray();return json({unlocked,selected});
     }
     if (path === "/community/trophies-save") {
       const unlocked=new Set(this.sql.exec("SELECT achievement_id AS id FROM user_achievements WHERE user_id=?",data.userId).toArray().map(x=>x.id));
