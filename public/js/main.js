@@ -305,7 +305,7 @@ function renderChatMessage(message) {
   meta.append(name);
   if (badgeCosmetic) {
     const badge = document.createElement('span');
-    badge.className = 'cosmetic-badge';
+    badge.className = 'cosmetic-badge cosmetic-name-badge';
     badge.textContent = badgeCosmetic.badge;
     badge.title = badgeCosmetic.name;
     meta.append(badge);
@@ -511,9 +511,9 @@ function connectChat() {
           name.classList.remove('cosmetic-name', ...Array.from(name.classList).filter(className => className.startsWith('cosmetic-name-')));
           if (nameItem) name.classList.add('cosmetic-name', 'cosmetic-name-' + nameItem.id);
         } else if (data.itemType === 'badge') {
-          meta.querySelector('.cosmetic-badge')?.remove();
+          meta.querySelector('.cosmetic-name-badge')?.remove();
           const badgeItem = shopState.items.find(entry => entry.id === data.itemId && entry.type === 'badge');
-          if (badgeItem) { const badge=document.createElement('span');badge.className='cosmetic-badge';badge.textContent=badgeItem.badge;badge.title=badgeItem.name;name.after(badge); }
+          if (badgeItem) { const badge=document.createElement('span');badge.className='cosmetic-badge cosmetic-name-badge';badge.textContent=badgeItem.badge;badge.title=badgeItem.name;name.after(badge); }
         } else {
           const classPrefix = data.itemType === 'chat_theme' ? 'cosmetic-theme-' : data.itemType === 'chat_effect' ? 'cosmetic-effect-' : data.itemType === 'entry_effect' ? 'cosmetic-entry-' : data.itemType === 'message_font' ? 'cosmetic-font-' : '';
           if (classPrefix) {
