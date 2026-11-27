@@ -528,6 +528,11 @@ function connectChat() {
             const item=shopState.items.find(entry=>entry.id===data.itemId);
             if(item){const span=document.createElement('span');span.className='cosmetic-profile-title';span.textContent=item.value;meta.append(span);}
           }
+          if (data.itemType === 'collectible') {
+            meta.querySelector('.cosmetic-collectible')?.remove();
+            const item=shopState.items.find(entry=>entry.id===data.itemId);
+            if(item){const span=document.createElement('span');span.className='cosmetic-badge cosmetic-collectible';span.textContent=item.badge||item.icon;span.title=item.name;meta.append(span);}
+          }
         }
       });
     }
