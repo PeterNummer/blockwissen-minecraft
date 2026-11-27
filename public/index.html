@@ -99,7 +99,7 @@
           <p class="chat-privacy-hint">Verwende keine persönlichen Daten als Benutzernamen oder in Chatnachrichten.</p>
         </div>
       </div>
-      <section class="shop-panel" id="shopPanel" hidden><div class="shop-heading"><div><span class="admin-kicker">TYQORA STORE</span><h2>Coin-Shop</h2><p>Hol dir kosmetische Extras für deinen Chat-Auftritt.</p></div><div class="shop-balance" id="shopBalance">🪙 100 Coins</div></div><div class="shop-toolbar"><button class="close" id="shopBack" type="button">← Zurück zum Chat</button><button class="close" id="shopRefresh" type="button">Aktualisieren</button></div><div class="shop-grid" id="shopItems"></div><p class="chat-feedback" id="shopFeedback" role="status"></p></section>
+      <section class="shop-panel" id="shopPanel" hidden><div class="shop-heading"><div><span class="admin-kicker">TYQORA STORE</span><h2>Coin-Shop</h2><p>Hol dir kosmetische Extras für deinen Chat-Auftritt.</p></div><div class="shop-balance" id="shopBalance">🪙 100 Coins</div></div><div class="shop-toolbar"><button class="close" id="shopBack" type="button">← Zurück zum Chat</button><button class="close" id="shopRefresh" type="button">Aktualisieren</button></div><nav class="shop-filters" id="shopFilters" aria-label="Shop-Kategorien"></nav><div class="shop-grid" id="shopItems"></div><p class="chat-feedback" id="shopFeedback" role="status"></p></section>
       <section class="admin-panel" id="adminPanel" hidden>
         <div class="admin-heading"><div><span class="admin-kicker">TYQORA CONTROL</span><h2>Benutzerverwaltung</h2><p>Owner-Dashboard · Nur für deinen Owner-Account</p></div><button class="close" id="adminRefresh" type="button">Aktualisieren</button></div>
         <div class="admin-stats"><div><strong id="userCount">0</strong><span>Registrierte Accounts</span></div><div><strong id="ownerCount">0</strong><span>Owner</span></div></div>
@@ -112,9 +112,11 @@
         <div class="chat-messages" id="chatMessages" aria-live="polite"></div>
         <form class="chat-composer" id="chatMessageForm">
           <button type="button" class="chat-commands-button" id="chatCommandsButton" title="Befehle anzeigen" aria-label="Befehle anzeigen">/</button>
+          <button type="button" class="chat-commands-button chat-sticker-toggle" id="chatStickerToggle" title="Sticker öffnen" aria-label="Sticker öffnen" hidden>☺</button>
           <input id="chatMessageInput" maxlength="1000" autocomplete="off" placeholder="Nachricht an # willkommen" aria-label="Nachricht" required>
           <button class="chat-primary" type="submit">Senden</button>
         </form>
+        <div class="chat-sticker-tray" id="chatStickerTray" hidden aria-label="Sticker"></div>
       </div>
     </section>
   </div>
