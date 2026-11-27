@@ -36,7 +36,7 @@
       const level=Number(p.level||1),xp=Number(p.xp||0),progress=xp%100;
       const isLegend=p.role==='owner'||level>=10;const rank=isLegend?'Legende':level>=5?'Stammgast':level>=2?'Aktiv':'Neuling';
       title.append(el('p','profile-status','Status: '+rank));
-      const stats=el('div','profile-progress');stats.append(el('strong','','Level '+level),el('div','','XP: '+xp+' · Noch '+(100-progress)+' XP bis Level '+(level+1)));
+      const stats=el('div','profile-progress');stats.append(el('strong','','Level '+level),el('div','','XP: '+xp+' · Noch '+(100-progress)+' XP bis Level '+(level+1)),el('div','profile-message-total','💬 '+Number(p.messageCount||0)+' Nachrichten insgesamt'));
       const track=el('div','profile-progress-track'),fill=el('span','');fill.style.width=progress+'%';track.append(fill);stats.append(track);
       const achievements=el('div','profile-stats');
       achievements.append(el('span','',level>=2?'🏅 Aktiv dabei':'🔒 Aktiv-Level'),el('span','',level>=5?'🌟 Stammgast':'🔒 Stammgast'),el('span','',isLegend?'👑 Legende':'🔒 Legende'));
