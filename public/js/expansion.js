@@ -53,12 +53,12 @@
     const b=e.target.closest('[data-action]');if(!b)return;const a=b.dataset.action;
     try{
       if(a==='vote')await api('poll-vote','POST',{pollId:b.dataset.id,optionIndex:Number(b.dataset.index)});
-      if(a==='claim'){const result=await api('daily/claim','POST',{});if(window.chatUser)window.chatUser.coins=result.coins;}
+      if(a==='claim'){const result=await api('daily/claim','POST',{});if(typeof chatUser!=='undefined'&&chatUser)chatUser.coins=result.coins;}
       if(a==='join')await api('event-join','POST',{eventId:b.dataset.id});
       if(a==='delete-role'){if(!confirm('Diese eigene Rolle löschen?'))return;await api('custom-roles?id='+encodeURIComponent(b.dataset.id),'DELETE');}
       await load(active);
     }catch(err){const p=document.createElement('p');p.className='chat-feedback';p.textContent=err.message;body.prepend(p);}
   }
-  function auth(){window.tyqoraIsOwner=window.chatUser?.role==='owner';window.tyqoraRole=window.chatUser?.role||'';ensure();}
+  function auth(){window.tyqoraIsOwner=typeof chatUser!=='undefined'&&chatUser?.role==='owner';window.tyqoraRole=typeof chatUser!=='undefined'?(chatUser?.role||''):'';ensure();}
   window.addEventListener('tyqora:authenticated',auth);if(token())auth();
 })();
