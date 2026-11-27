@@ -969,3 +969,73 @@ html[data-tyqora-theme] #chatOverlay .chat-primary{background:var(--tyqora-accen
 .profile-trophy-showcase{display:grid;gap:8px;margin:14px 0;padding:12px;border:1px solid #46566b;border-radius:12px;background:#111e2c}
 .profile-trophy-edit{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .profile-trophy-option{display:inline-flex;align-items:center;gap:5px;padding:6px 8px;border-radius:8px;background:#1a2a3d}
+
+
+/* FIX 2026-11: Chat-Nachrichtenrahmen und private Chats in der Seitenleiste */
+#chatOverlay .chat-messages{
+  align-items:stretch;
+  padding-left:18px!important;
+  padding-right:18px!important;
+}
+#chatOverlay .chat-message{
+  box-sizing:border-box;
+  position:relative;
+  max-width:min(92%,760px);
+  margin:2px 0 2px 4px;
+  padding:12px 48px 12px 16px!important;
+  border:1px solid #3b4858;
+  border-radius:14px!important;
+  background:#202b38;
+  overflow:visible;
+}
+#chatOverlay .chat-message.bot-message{
+  border-radius:14px!important;
+  border:1px solid #3d6286;
+}
+#chatOverlay .chat-message.message-pinned{
+  border-left:3px solid #9ce36b;
+  padding-left:15px!important;
+}
+#chatOverlay .chat-message .message-menu-wrap{
+  top:7px;
+  right:7px;
+}
+#chatOverlay .chat-side{
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+  overflow-x:hidden;
+  overflow-y:auto!important;
+  overscroll-behavior:contain;
+}
+#chatOverlay .dm-sidebar-section{
+  display:block;
+  flex:0 0 auto!important;
+  min-height:0;
+  width:100%;
+  margin:16px 0 8px;
+  padding:12px 0 0;
+  border-top:1px solid #ffffff20;
+}
+#chatOverlay .dm-sidebar-section[hidden]{display:none!important}
+#chatOverlay #dmSidebarContent{display:block;min-height:0}
+#chatOverlay #dmSidebarContent[hidden]{display:none!important}
+#chatOverlay .dm-sidebar-list{
+  display:grid;
+  gap:4px;
+  max-height:260px;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+}
+#chatOverlay .dm-sidebar-user{flex:0 0 auto;min-height:38px}
+#chatOverlay .chat-account{flex:0 0 auto}
+#chatOverlay .chat-side-bottom{flex:0 0 auto;margin-top:auto}
+@media(min-width:601px){
+  #chatOverlay .chat-side{height:100%;padding-bottom:14px}
+}
+@media(max-width:600px){
+  #chatOverlay .chat-messages{padding-left:12px!important;padding-right:12px!important}
+  #chatOverlay .chat-message{max-width:100%;margin-left:2px;padding:11px 46px 11px 14px!important}
+  #chatOverlay .dm-sidebar-section{margin-top:12px}
+  #chatOverlay .dm-sidebar-list{max-height:24vh}
+}
