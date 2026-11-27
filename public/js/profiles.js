@@ -18,7 +18,7 @@
       const backgroundId = equipped.profile_background || '';
       view.classList.remove('profile-view-background-space','profile-view-background-minecraft');
       if(backgroundId.startsWith('background_')) view.classList.add('profile-view-background-' + backgroundId.slice(11));
-      if(p.bannerUrl){const banner=el('div','profile-banner');banner.style.backgroundImage='url("'+avatarSource(p.bannerUrl)+'")';banner.setAttribute('aria-label','Profilbanner');view.append(banner);}
+      if(p.bannerUrl||p.bannerEffect&&p.bannerEffect!=='none'){const banner=el('div','profile-banner profile-banner-effect-'+(p.bannerEffect||'none'));if(p.bannerUrl)banner.style.backgroundImage='url("'+avatarSource(p.bannerUrl)+'")';banner.setAttribute('aria-label','Profilbanner');view.append(banner);}
       if(p.backgroundUrl){view.style.backgroundImage='linear-gradient(rgba(7,14,24,.82),rgba(7,14,24,.94)),url("'+avatarSource(p.backgroundUrl)+'")';view.style.backgroundSize='cover';view.style.backgroundPosition='center';}else view.style.backgroundImage='';
       const head=el('div','profile-head'),avatar=el('div','profile-avatar');
       if(p.avatarUrl){const img=document.createElement('img');img.referrerPolicy='no-referrer';img.src=avatarSource(p.avatarUrl);img.alt='Profilbild';img.loading='eager';img.decoding='async';img.onerror=()=>{img.remove();avatar.textContent=p.name.slice(0,1).toUpperCase();avatar.title='Das Profilbild konnte nicht geladen werden. Verwende einen direkten HTTPS-Bildlink.';};avatar.append(img);}
@@ -52,6 +52,23 @@
         p.achievements.forEach(item=>{const badge=el('span','achievement-chip'+(item.unlocked?' unlocked':' locked'),(item.unlocked?item.icon:'🔒')+' '+item.name);achievementBox.append(badge);});
         view.append(achievementBox);
       }
+      try {
+        const trophyData=await api('trophies');
+        const showcase=el('div','profile-trophy-showcase');showcase.append(el('h3','','🏆 Trophäen-Vitrine'));
+        const labels={first_message:'Erste Nachricht',xp_100:'100 XP',level_5:'Level 5',level_10:'Level 10'};
+        const selected=trophyData.selected||[];
+        if(selected.length) selected.forEach(t=>showcase.append(el('span','achievement-chip unlocked','🏆 '+(labels[t.id]||t.id))));
+        else showcase.append(el('p','','Noch keine Trophäen ausgewählt.'));
+        if(data.own){
+          const edit=el('div','profile-trophy-edit');edit.append(el('strong','','Vitrine bearbeiten (max. 3)'));
+          const chosen=new Set(selected.map(t=>t.id));
+          (trophyData.unlocked||[]).forEach(id=>{const label=el('label','profile-trophy-option');const check=document.createElement('input');check.type='checkbox';check.value=id;check.checked=chosen.has(id);label.append(check,document.createTextNode(' '+(labels[id]||id)));edit.append(label);});
+          const saveTrophies=el('button','chat-primary','Vitrine speichern');saveTrophies.type='button';
+          saveTrophies.addEventListener('click',async()=>{const ids=[...edit.querySelectorAll('input:checked')].map(x=>x.value);if(ids.length>3){feedbackTrophy.textContent='Maximal 3 Trophäen auswählen.';return;}try{await api('trophies','POST',{ids});await openProfile();}catch(err){feedbackTrophy.textContent=err.message;}});
+          const feedbackTrophy=el('p','chat-feedback','');edit.append(saveTrophies,feedbackTrophy);showcase.append(edit);
+        }
+        view.append(showcase);
+      } catch {}
       if(data.own){
         const form=el('form','profile-edit'),bioLabel=el('label','','Über mich (max. 240 Zeichen)'),bio=document.createElement('textarea');
         bio.maxLength=240;bio.value=p.bio||'';
@@ -63,16 +80,16 @@
         bannerUrl.type='url';bannerUrl.maxLength=500;bannerUrl.placeholder='https://…';bannerUrl.value=p.bannerUrl||'';
         const backgroundLabel=el('label','','Profilhintergrund-URL (HTTPS, optional)'),backgroundUrl=document.createElement('input');
         backgroundUrl.type='url';backgroundUrl.maxLength=500;backgroundUrl.placeholder='https://…';backgroundUrl.value=p.backgroundUrl||'';
-        const preview=el('div','profile-avatar profile-avatar-preview');const previewFallback=el('span','','Vorschau');preview.append(previewFallback);const previewStatus=el('small','profile-avatar-hint','Direkter HTTPS-Bildlink (JPG, PNG oder WebP).');url.addEventListener('input',()=>{preview.replaceChildren();const value=url.value.trim();if(!value){preview.append(el('span','','Vorschau'));previewStatus.textContent='Direkter HTTPS-Bildlink (JPG, PNG oder WebP).';return;}let parsed;try{parsed=new URL(value);}catch{preview.append(el('span','','?'));previewStatus.textContent='Bitte eine gültige Bild-URL eingeben.';return;}if(parsed.protocol!=='https:'){preview.append(el('span','','!'));previewStatus.textContent='Nur HTTPS-Bildlinks werden unterstützt.';return;}const image=document.createElement('img');image.referrerPolicy='no-referrer';image.alt='Profilbild-Vorschau';image.onload=()=>{previewStatus.textContent='Bildvorschau erfolgreich geladen.';};image.onerror=()=>{preview.replaceChildren(el('span','','!'));previewStatus.textContent='Bild nicht erreichbar. Verwende einen direkten Link zur Bilddatei, nicht zur Webseite.';};image.src=avatarSource(value);preview.append(image);});if(url.value)url.dispatchEvent(new Event('input'));const musicLabel=el('label','','Profil-Musik-URL (HTTPS, optional)'),musicUrl=document.createElement('input');
+        const effectLabel=el('label','','Banner-Animation'),bannerEffect=document.createElement('select');[['none','Keine'],['shimmer','Schimmer'],['float','Sanft bewegen'],['stars','Sternenfunkeln']].forEach(([v,n])=>{const o=document.createElement('option');o.value=v;o.textContent=n;bannerEffect.append(o);});bannerEffect.value=p.bannerEffect||'none';const preview=el('div','profile-avatar profile-avatar-preview');const previewFallback=el('span','','Vorschau');preview.append(previewFallback);const previewStatus=el('small','profile-avatar-hint','Direkter HTTPS-Bildlink (JPG, PNG oder WebP).');url.addEventListener('input',()=>{preview.replaceChildren();const value=url.value.trim();if(!value){preview.append(el('span','','Vorschau'));previewStatus.textContent='Direkter HTTPS-Bildlink (JPG, PNG oder WebP).';return;}let parsed;try{parsed=new URL(value);}catch{preview.append(el('span','','?'));previewStatus.textContent='Bitte eine gültige Bild-URL eingeben.';return;}if(parsed.protocol!=='https:'){preview.append(el('span','','!'));previewStatus.textContent='Nur HTTPS-Bildlinks werden unterstützt.';return;}const image=document.createElement('img');image.referrerPolicy='no-referrer';image.alt='Profilbild-Vorschau';image.onload=()=>{previewStatus.textContent='Bildvorschau erfolgreich geladen.';};image.onerror=()=>{preview.replaceChildren(el('span','','!'));previewStatus.textContent='Bild nicht erreichbar. Verwende einen direkten Link zur Bilddatei, nicht zur Webseite.';};image.src=avatarSource(value);preview.append(image);});if(url.value)url.dispatchEvent(new Event('input'));const musicLabel=el('label','','Profil-Musik-URL (HTTPS, optional)'),musicUrl=document.createElement('input');
         musicUrl.type='url';musicUrl.maxLength=500;musicUrl.placeholder='https://…';musicUrl.value=p.musicUrl||'';
         const musicHint=el('small','','Direkter Audio-Dateilink. Wiedergabe startet erst nach einem Klick.');
         if(!p.musicUnlocked){musicUrl.disabled=true;musicUrl.placeholder='Im Shop freischalten';musicHint.textContent='Profil-Musik ist noch nicht freigeschaltet. Kaufe zuerst „Profil-Musik“ im Shop.';}
         const save=el('button','chat-primary profile-save','Profil speichern');save.type='submit';
         const feedback=el('p','chat-feedback','');
-        form.append(bioLabel,bio,titleLabel,profileTitle,urlLabel,url,preview,previewStatus,bannerLabel,bannerUrl,backgroundLabel,backgroundUrl);
+        form.append(bioLabel,bio,titleLabel,profileTitle,urlLabel,url,preview,previewStatus,bannerLabel,bannerUrl,effectLabel,bannerEffect,backgroundLabel,backgroundUrl);
         if(p.musicUnlocked) form.append(musicLabel,musicUrl,musicHint);
         form.append(save,feedback);
-        form.addEventListener('submit',async e=>{e.preventDefault();save.disabled=true;try{if(url.value.trim()&&!preview.querySelector('img'))throw new Error('Das Profilbild ist nicht erreichbar. Bitte einen direkten HTTPS-Bildlink verwenden.');await api('profile','POST',{bio:bio.value,title:profileTitle.value,avatarUrl:url.value,bannerUrl:bannerUrl.value,backgroundUrl:backgroundUrl.value,musicUrl:p.musicUnlocked?musicUrl.value:''});feedback.textContent='Profil gespeichert.';await openProfile();}catch(err){feedback.textContent=err.message;save.disabled=false;}});
+        form.addEventListener('submit',async e=>{e.preventDefault();save.disabled=true;try{if(url.value.trim()&&!preview.querySelector('img'))throw new Error('Das Profilbild ist nicht erreichbar. Bitte einen direkten HTTPS-Bildlink verwenden.');await api('profile','POST',{bio:bio.value,title:profileTitle.value,avatarUrl:url.value,bannerUrl:bannerUrl.value,bannerEffect:bannerEffect.value,backgroundUrl:backgroundUrl.value,musicUrl:p.musicUnlocked?musicUrl.value:''});feedback.textContent='Profil gespeichert.';await openProfile();}catch(err){feedback.textContent=err.message;save.disabled=false;}});
         view.append(form);
       }
     }catch(error){view.replaceChildren(el('p','chat-feedback',error.message));}
