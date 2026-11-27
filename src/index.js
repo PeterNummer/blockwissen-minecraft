@@ -425,6 +425,7 @@ export class AuthStore extends DurableObject {
       const targetId = data.targetId || data.userId;
       const profile = one("SELECT bio,avatar_url AS avatarUrl,banner_url AS bannerUrl,background_url AS backgroundUrl,title,music_url AS musicUrl,updated_at AS updatedAt FROM profiles WHERE user_id=?", targetId) || { bio: "", avatarUrl: "", bannerUrl: "", backgroundUrl: "", title: "", musicUrl: "", updatedAt: 0 };
       const equippedCosmetics = Object.fromEntries(this.sql.exec("SELECT slot,item_id AS itemId FROM user_cosmetics WHERE user_id=?", targetId).toArray().map(item => [item.slot,item.itemId]));
+      const musicUnlocked = !!one("SELECT item_id FROM user_items WHERE user_id=? AND item_id='music_profile'", targetId);
       const user = one("SELECT id,name,role,created_at AS createdAt,equipped_item AS equippedItem,equipped_badge AS equippedBadge FROM users WHERE id=?", targetId);
       if (!user) return json({ error: "Mitglied nicht gefunden." }, 404);
       const stats = one("SELECT xp,level FROM user_stats WHERE user_id=?", targetId) || { xp: 0, level: 1 };
@@ -434,7 +435,7 @@ export class AuthStore extends DurableObject {
       const conditions=[["first_message",stats.xp>=5],["xp_100",stats.xp>=100],["level_5",stats.level>=5],["level_10",stats.level>=10]];
       for(const [id,ok] of conditions) if(ok&&!unlocked.has(id)) { this.sql.exec("INSERT OR IGNORE INTO user_achievements (user_id,achievement_id,unlocked_at) VALUES (?,?,?)",targetId,id,Date.now()); unlocked.add(id); }
       const achievementList=definitions.map(([id,name,icon])=>({id,name,icon,unlocked:unlocked.has(id)}));
-      return json({ profile: { ...user, ...profile, equippedCosmetics, ...stats, achievements: achievementList }, own: targetId === data.userId });
+      return json({ profile: { ...user, ...profile, equippedCosmetics, musicUnlocked, ...stats, achievements: achievementList }, own: targetId === data.userId });
     }
     if (path === "/community/profile-save") {
       const bio = typeof data.bio === "string" ? data.bio.trim().slice(0, 240) : "";
