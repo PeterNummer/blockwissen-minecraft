@@ -461,7 +461,7 @@ export class AuthStore extends DurableObject {
       if (!user) return json({ error: "Mitglied nicht gefunden." }, 404);
       let stats = one("SELECT xp,level FROM user_stats WHERE user_id=?", targetId) || { xp: 0, level: 1 };
       if(user.role==="owner"){
-        stats={xp:4999,level:50};
+        stats={xp:4900,level:50};
         this.sql.exec("INSERT INTO user_stats (user_id,xp,level,last_xp_at) VALUES (?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET xp=excluded.xp,level=excluded.level",targetId,stats.xp,stats.level,0);
         for(const id of ["first_message","xp_100","level_5","level_10"])this.sql.exec("INSERT OR IGNORE INTO user_achievements (user_id,achievement_id,unlocked_at) VALUES (?,?,?)",targetId,id,Date.now());
         for(const [id,pos] of [["first_message",0],["xp_100",1],["level_5",2],["level_10",3]])this.sql.exec("INSERT OR IGNORE INTO trophy_showcase (user_id,achievement_id,position) VALUES (?,?,?)",targetId,id,pos);
