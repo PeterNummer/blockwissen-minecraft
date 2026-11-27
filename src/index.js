@@ -458,13 +458,14 @@ export class AuthStore extends DurableObject {
       const user = one("SELECT id,name,role,created_at AS createdAt,equipped_item AS equippedItem,equipped_badge AS equippedBadge FROM users WHERE id=?", targetId);
       if (!user) return json({ error: "Mitglied nicht gefunden." }, 404);
       const stats = one("SELECT xp,level FROM user_stats WHERE user_id=?", targetId) || { xp: 0, level: 1 };
+      const activity = one("SELECT message_count AS messageCount FROM user_activity WHERE user_id=?",targetId) || {messageCount:0};
       const definitions=[["first_message","Erste Nachricht","💬"],["xp_100","100 XP gesammelt","⭐"],["level_5","Level 5 erreicht","🌟"],["level_10","Level 10 erreicht","👑"]];
       const achievements=this.sql.exec("SELECT achievement_id AS id,unlocked_at AS unlockedAt FROM user_achievements WHERE user_id=?",targetId).toArray();
       const unlocked=new Set(achievements.map(a=>a.id));
       const conditions=[["first_message",stats.xp>=5],["xp_100",stats.xp>=100],["level_5",stats.level>=5],["level_10",stats.level>=10]];
       for(const [id,ok] of conditions) if(ok&&!unlocked.has(id)) { this.sql.exec("INSERT OR IGNORE INTO user_achievements (user_id,achievement_id,unlocked_at) VALUES (?,?,?)",targetId,id,Date.now()); unlocked.add(id); }
       const achievementList=definitions.map(([id,name,icon])=>({id,name,icon,unlocked:unlocked.has(id)}));
-      return json({ profile: { ...user, ...profile, equippedCosmetics, musicUnlocked, ...stats, achievements: achievementList }, own: targetId === data.userId });
+      return json({ profile: { ...user, ...profile, equippedCosmetics, musicUnlocked, ...stats, ...activity, achievements: achievementList }, own: targetId === data.userId });
     }
     if (path === "/community/profile-save") {
       const bio = typeof data.bio === "string" ? data.bio.trim().slice(0, 240) : "";
@@ -524,7 +525,7 @@ export class AuthStore extends DurableObject {
     if (path === "/community/polls-create") {
       const question=String(data.question||"").trim().slice(0,120), options=Array.isArray(data.options)?data.options.map(x=>String(x).trim().slice(0,80)).filter(Boolean):[];
       if(question.length<4||options.length<2||options.length>5||new Set(options).size!==options.length)return json({error:"Bitte eine Frage und 2 bis 5 unterschiedliche Antwortmöglichkeiten angeben."},400);
-      const id=crypto.randomUUID(),now=Date.now(),channel=["welcome","minecraft","offtopic"].includes(data.channel)?data.channel:"welcome";
+      const id=crypto.randomUUID(),now=Date.now(),channel=["welcome","general","minecraft"].includes(data.channel)?data.channel:"welcome";
       this.sql.exec("INSERT INTO chat_polls (id,user_id,channel,question,options_json,created_at,ends_at) VALUES (?,?,?,?,?,?,?)",id,data.userId,channel,question,JSON.stringify(options),now,now+7*86400000);
       return json({ok:true,id});
     }
