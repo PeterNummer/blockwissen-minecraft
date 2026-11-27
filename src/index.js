@@ -19,7 +19,33 @@ const SHOP_ITEMS = [
   { id: "rocket_badge", name: "Raketen-Badge", description: "Eine Rakete neben deinem Namen.", price: 170, type: "badge", badge: "🚀", icon: "🚀" },
   { id: "heart_badge", name: "Herz-Badge", description: "Ein Herz neben deinem Namen.", price: 130, type: "badge", badge: "💜", icon: "💜" },
   { id: "leaf_badge", name: "Blatt-Badge", description: "Ein Blatt neben deinem Namen.", price: 110, type: "badge", badge: "🍀", icon: "🍀" },
-  { id: "ghost_badge", name: "Geister-Badge", description: "Ein Geist neben deinem Namen.", price: 190, type: "badge", badge: "👻", icon: "👻" }
+  { id: "ghost_badge", name: "Geister-Badge", description: "Ein Geist neben deinem Namen.", price: 190, type: "badge", badge: "👻", icon: "👻" },
+  { id: "frame_neon", name: "Neon-Rahmen", description: "Ein leuchtender Rahmen für dein Profilbild.", price: 220, type: "profile_frame", value: "neon", icon: "🟦" },
+  { id: "frame_gold", name: "Goldrahmen", description: "Ein edler goldener Profilbild-Rahmen.", price: 350, type: "profile_frame", value: "gold", icon: "🟨" },
+  { id: "frame_ice", name: "Eisrahmen", description: "Ein frostiger Rahmen mit kühlem Leuchten.", price: 280, type: "profile_frame", value: "ice", icon: "❄️" },
+  { id: "background_space", name: "Weltraum-Profil", description: "Ein dunkler Weltraum-Look für dein Profil.", price: 260, type: "profile_background", value: "space", icon: "🌌" },
+  { id: "background_minecraft", name: "Overworld-Profil", description: "Ein grüner Look inspiriert von Minecraft-Biomen.", price: 240, type: "profile_background", value: "minecraft", icon: "🌳" },
+  { id: "effect_sparkle", name: "Funkel-Chat", description: "Deine Chatnachrichten erhalten einen dezenten Glitzereffekt.", price: 180, type: "chat_effect", value: "sparkle", icon: "✨" },
+  { id: "effect_glow", name: "Glow-Chat", description: "Ein sanft leuchtender Rand für deine Nachrichten.", price: 230, type: "chat_effect", value: "glow", icon: "💡" },
+  { id: "theme_cyber", name: "Cyberpunk-Design", description: "Ein futuristischer Neon-Look für deine Nachrichten.", price: 300, type: "chat_theme", value: "cyber", icon: "🌃" },
+  { id: "theme_amoled", name: "AMOLED-Design", description: "Ein besonders dunkles Chat-Design.", price: 200, type: "chat_theme", value: "amoled", icon: "🌑" },
+  { id: "sticker_minecraft", name: "Minecraft-Sticker", description: "Schaltet ein kleines Minecraft-Sticker-Menü im Chat frei.", price: 250, type: "sticker_pack", value: "minecraft", icon: "⛏️" },
+  { id: "sticker_fun", name: "Emoji-Sticker", description: "Schaltet zusätzliche Emoji-Sticker im Chat frei.", price: 180, type: "sticker_pack", value: "fun", icon: "🎉" },
+  { id: "status_star", name: "Stern-Status", description: "Ein Stern-Symbol neben deinem Namen.", price: 120, type: "status_icon", value: "⭐", icon: "⭐" },
+  { id: "status_lightning", name: "Blitz-Status", description: "Ein Blitz-Symbol neben deinem Namen.", price: 140, type: "status_icon", value: "⚡", icon: "⚡" },
+  { id: "title_builder", name: "Titel: Weltenbauer", description: "Der Titel Weltenbauer erscheint in deinem Profil und Chat.", price: 280, type: "profile_title", value: "Weltenbauer", icon: "🧱" },
+  { id: "title_explorer", name: "Titel: Entdecker", description: "Der Titel Entdecker erscheint in deinem Profil und Chat.", price: 220, type: "profile_title", value: "Entdecker", icon: "🧭" },
+  { id: "entry_portal", name: "Portal-Auftritt", description: "Ein dezenter Portal-Effekt bei deinen Chatnachrichten.", price: 320, type: "entry_effect", value: "portal", icon: "🌀" },
+  { id: "entry_spark", name: "Sternen-Auftritt", description: "Ein kurzer Sternen-Akzent bei deinen Chatnachrichten.", price: 260, type: "entry_effect", value: "spark", icon: "🌠" },
+  { id: "collectible_pixel", name: "Pixel-Sammlerstück", description: "Ein seltenes Pixel-Sammler-Badge für dein Profil.", price: 400, type: "collectible", value: "pixel", badge: "🟪", icon: "🟪" },
+  { id: "collectible_mythic", name: "Mythischer Kristall", description: "Ein besonders seltenes Sammlerstück.", price: 650, type: "collectible", value: "mythic", badge: "🔮", icon: "🔮" },
+  { id: "music_profile", name: "Profil-Musik", description: "Schaltet die Möglichkeit frei, einen eigenen Musiklink im Profil zu hinterlegen.", price: 500, type: "profile_music", value: "enabled", icon: "🎵" },
+  { id: "font_pixel", name: "Pixel-Schrift", description: "Eine pixelige Schrift für deine Chatnachrichten.", price: 180, type: "message_font", value: "pixel", icon: "👾" },
+  { id: "font_serif", name: "Klassische Schrift", description: "Eine elegante Serifenschrift für deine Chatnachrichten.", price: 150, type: "message_font", value: "serif", icon: "📜" },
+  { id: "gradient_spectrum", name: "Spektrum-Name", description: "Ein bunter Farbverlauf für deinen Namen.", price: 300, type: "name", color: "spectrum", icon: "🌈" },
+  { id: "gradient_fire", name: "Flammen-Name", description: "Ein warmer Orange-Rot-Verlauf für deinen Namen.", price: 280, type: "name", color: "fire", icon: "🔥" },
+  { id: "badge_moon", name: "Mond-Badge", description: "Ein Mond neben deinem Namen.", price: 160, type: "badge", badge: "🌙", icon: "🌙" },
+  { id: "badge_comet", name: "Kometen-Badge", description: "Ein Komet neben deinem Namen.", price: 210, type: "badge", badge: "☄️", icon: "☄️" }
 ];
 
 function json(data, status = 200) {
@@ -183,7 +209,7 @@ export default {
       }
       if (url.pathname === "/api/shop/equip" && request.method === "POST") {
         const data = await readBody(request);
-        const itemType = data.itemType === "badge" ? "badge" : "name";
+        const itemType = typeof data.itemType === "string" ? data.itemType : "name";
         const result = await storeCall(env, "/shop-equip", { userId: auth.user.id, itemId: data.itemId || "", itemType });
         if (result.ok) {
           const update = { userId: auth.user.id, itemId: data.itemId || "", itemType };
@@ -264,7 +290,7 @@ export default {
       const auth = await authResponse.json();
       if (!authResponse.ok || !auth.user) return new Response(auth.error || "Sitzung abgelaufen", { status: 401 });
       const headers = new Headers(request.headers);
-      headers.set("X-TYQORA-User", JSON.stringify({ id: auth.user.id, name: auth.user.name, role: auth.user.role, equippedItem: auth.user.equippedItem || "", equippedBadge: auth.user.equippedBadge || "" }));
+      headers.set("X-TYQORA-User", JSON.stringify({ id: auth.user.id, name: auth.user.name, role: auth.user.role, equippedItem: auth.user.equippedItem || "", equippedBadge: auth.user.equippedBadge || "", equippedCosmetics: auth.user.equippedCosmetics || {} }));
       const id = env.CHAT_ROOM.idFromName(channel);
       return env.CHAT_ROOM.get(id).fetch(new Request(request, { headers }));
     }
@@ -286,11 +312,14 @@ export class AuthStore extends DurableObject {
       token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL, expires_at INTEGER NOT NULL
     )`);
     this.sql.exec(`CREATE TABLE IF NOT EXISTS user_items (user_id TEXT NOT NULL, item_id TEXT NOT NULL, purchased_at INTEGER NOT NULL, PRIMARY KEY(user_id,item_id))`);
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS user_cosmetics (user_id TEXT NOT NULL, slot TEXT NOT NULL, item_id TEXT NOT NULL, updated_at INTEGER NOT NULL, PRIMARY KEY(user_id,slot))`);
     try { this.sql.exec("ALTER TABLE users ADD COLUMN coins INTEGER NOT NULL DEFAULT 100"); } catch {}
     try { this.sql.exec("ALTER TABLE users ADD COLUMN equipped_item TEXT NOT NULL DEFAULT ''"); } catch {}
     try { this.sql.exec("ALTER TABLE users ADD COLUMN equipped_badge TEXT NOT NULL DEFAULT ''"); } catch {}
     this.sql.exec("UPDATE users SET equipped_badge=equipped_item,equipped_item='' WHERE equipped_item='star_badge' AND equipped_badge=''");
-    this.sql.exec("CREATE TABLE IF NOT EXISTS profiles (user_id TEXT PRIMARY KEY, bio TEXT NOT NULL DEFAULT '', avatar_url TEXT NOT NULL DEFAULT '', banner_url TEXT NOT NULL DEFAULT '', background_url TEXT NOT NULL DEFAULT '', updated_at INTEGER NOT NULL)");
+    this.sql.exec("CREATE TABLE IF NOT EXISTS profiles (user_id TEXT PRIMARY KEY, bio TEXT NOT NULL DEFAULT '', avatar_url TEXT NOT NULL DEFAULT '', banner_url TEXT NOT NULL DEFAULT '', background_url TEXT NOT NULL DEFAULT '', title TEXT NOT NULL DEFAULT '', music_url TEXT NOT NULL DEFAULT '', updated_at INTEGER NOT NULL)");
+    try { this.sql.exec("ALTER TABLE profiles ADD COLUMN title TEXT NOT NULL DEFAULT ''"); } catch {}
+    try { this.sql.exec("ALTER TABLE profiles ADD COLUMN music_url TEXT NOT NULL DEFAULT ''"); } catch {}
     try { this.sql.exec("ALTER TABLE profiles ADD COLUMN banner_url TEXT NOT NULL DEFAULT ''"); } catch {}
     try { this.sql.exec("ALTER TABLE profiles ADD COLUMN background_url TEXT NOT NULL DEFAULT ''"); } catch {}
     this.sql.exec("CREATE TABLE IF NOT EXISTS friend_requests (id TEXT PRIMARY KEY, sender_id TEXT NOT NULL, recipient_id TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', created_at INTEGER NOT NULL, UNIQUE(sender_id,recipient_id))");
@@ -340,7 +369,8 @@ export class AuthStore extends DurableObject {
         this.sql.exec("DELETE FROM sessions WHERE token_hash=?", data.tokenHash);
         return json({ error: "Sitzung ungültig oder Account gesperrt." }, 401);
       }
-      return json({ user: { id: row.user_id, name: row.name, role: row.role, createdAt: row.createdAt, coins: row.coins, equippedItem: row.equippedItem || "", equippedBadge: row.equippedBadge || "" } });
+      const equippedCosmetics = Object.fromEntries(this.sql.exec("SELECT slot,item_id AS itemId FROM user_cosmetics WHERE user_id=?", row.user_id).toArray().map(item => [item.slot,item.itemId]));
+      return json({ user: { id: row.user_id, name: row.name, role: row.role, createdAt: row.createdAt, coins: row.coins, equippedItem: row.equippedItem || "", equippedBadge: row.equippedBadge || "", equippedCosmetics } });
     }
     if (path === "/logout") { this.sql.exec("DELETE FROM sessions WHERE token_hash=?", data.tokenHash); return json({ ok: true }); }
     if (path === "/shop") {
@@ -354,7 +384,8 @@ export class AuthStore extends DurableObject {
           user.equippedItem = "sunset_name";
         }
       }
-      return json({ coins: user.coins, equippedItem: user.equippedItem || "", equippedBadge: user.equippedBadge || "", owned, items: SHOP_ITEMS });
+      const equippedCosmetics = Object.fromEntries(this.sql.exec("SELECT slot,item_id AS itemId FROM user_cosmetics WHERE user_id=?", data.userId).toArray().map(row => [row.slot,row.itemId]));
+      return json({ coins: user.coins, equippedItem: user.equippedItem || "", equippedBadge: user.equippedBadge || "", equippedCosmetics, owned, items: SHOP_ITEMS });
     }
     if (path === "/shop-buy") {
       const item = SHOP_ITEMS.find(entry => entry.id === data.itemId);
@@ -370,9 +401,10 @@ export class AuthStore extends DurableObject {
       return json({ ok: true, coins: balance.coins, purchased: item.id });
     }
     if (path === "/shop-equip") {
-      const type = data.itemType === "badge" ? "badge" : "name";
+      const type = typeof data.itemType === "string" ? data.itemType : "name";
       const item = data.itemId ? SHOP_ITEMS.find(entry => entry.id === data.itemId && entry.type === type) : null;
-      if (data.itemId && !item) return json({ error: "Ungültiges Cosmetic." }, 400);
+      const allowedTypes = new Set(["name","badge","profile_frame","profile_background","chat_effect","chat_theme","sticker_pack","status_icon","profile_title","entry_effect","collectible","profile_music","message_font"]);
+      if (!allowedTypes.has(type) || (data.itemId && !item)) return json({ error: "Ungültiges Cosmetic." }, 400);
       const user = one("SELECT role FROM users WHERE id=?", data.userId);
       if (!user) return json({ error: "Account nicht gefunden." }, 404);
       if (item?.ownerOnly && user.role !== "owner") return json({ error: "Dieses Cosmetic ist exklusiv für den Owner." }, 403);
@@ -381,12 +413,18 @@ export class AuthStore extends DurableObject {
         this.sql.exec("UPDATE users SET equipped_badge=? WHERE id=?", data.itemId || "", data.userId);
         return json({ ok: true, equippedBadge: data.itemId || "" });
       }
-      this.sql.exec("UPDATE users SET equipped_item=? WHERE id=?", data.itemId || "", data.userId);
-      return json({ ok: true, equippedItem: data.itemId || "" });
+      if (type === "name") {
+        this.sql.exec("UPDATE users SET equipped_item=? WHERE id=?", data.itemId || "", data.userId);
+        return json({ ok: true, equippedItem: data.itemId || "" });
+      }
+      if (data.itemId) this.sql.exec("INSERT INTO user_cosmetics (user_id,slot,item_id,updated_at) VALUES (?,?,?,?) ON CONFLICT(user_id,slot) DO UPDATE SET item_id=excluded.item_id,updated_at=excluded.updated_at", data.userId, type, data.itemId, Date.now());
+      else this.sql.exec("DELETE FROM user_cosmetics WHERE user_id=? AND slot=?", data.userId, type);
+      return json({ ok: true, itemType: type, itemId: data.itemId || "" });
     }
     if (path === "/community/profile-get") {
       const targetId = data.targetId || data.userId;
-      const profile = one("SELECT bio,avatar_url AS avatarUrl,banner_url AS bannerUrl,background_url AS backgroundUrl,updated_at AS updatedAt FROM profiles WHERE user_id=?", targetId) || { bio: "", avatarUrl: "", bannerUrl: "", backgroundUrl: "", updatedAt: 0 };
+      const profile = one("SELECT bio,avatar_url AS avatarUrl,banner_url AS bannerUrl,background_url AS backgroundUrl,title,music_url AS musicUrl,updated_at AS updatedAt FROM profiles WHERE user_id=?", targetId) || { bio: "", avatarUrl: "", bannerUrl: "", backgroundUrl: "", title: "", musicUrl: "", updatedAt: 0 };
+      const equippedCosmetics = Object.fromEntries(this.sql.exec("SELECT slot,item_id AS itemId FROM user_cosmetics WHERE user_id=?", targetId).toArray().map(item => [item.slot,item.itemId]));
       const user = one("SELECT id,name,role,created_at AS createdAt,equipped_item AS equippedItem,equipped_badge AS equippedBadge FROM users WHERE id=?", targetId);
       if (!user) return json({ error: "Mitglied nicht gefunden." }, 404);
       const stats = one("SELECT xp,level FROM user_stats WHERE user_id=?", targetId) || { xp: 0, level: 1 };
@@ -396,15 +434,18 @@ export class AuthStore extends DurableObject {
       const conditions=[["first_message",stats.xp>=5],["xp_100",stats.xp>=100],["level_5",stats.level>=5],["level_10",stats.level>=10]];
       for(const [id,ok] of conditions) if(ok&&!unlocked.has(id)) { this.sql.exec("INSERT OR IGNORE INTO user_achievements (user_id,achievement_id,unlocked_at) VALUES (?,?,?)",targetId,id,Date.now()); unlocked.add(id); }
       const achievementList=definitions.map(([id,name,icon])=>({id,name,icon,unlocked:unlocked.has(id)}));
-      return json({ profile: { ...user, ...profile, ...stats, achievements: achievementList }, own: targetId === data.userId });
+      return json({ profile: { ...user, ...profile, equippedCosmetics, ...stats, achievements: achievementList }, own: targetId === data.userId });
     }
     if (path === "/community/profile-save") {
       const bio = typeof data.bio === "string" ? data.bio.trim().slice(0, 240) : "";
       const avatarUrl = typeof data.avatarUrl === "string" ? data.avatarUrl.trim().slice(0, 500) : "";
       const bannerUrl = typeof data.bannerUrl === "string" ? data.bannerUrl.trim().slice(0, 500) : "";
       const backgroundUrl = typeof data.backgroundUrl === "string" ? data.backgroundUrl.trim().slice(0, 500) : "";
-      for (const value of [avatarUrl,bannerUrl,backgroundUrl]) if (value && !/^https:\/\//i.test(value)) return json({ error: "Alle Bildadressen müssen HTTPS verwenden." }, 400);
-      this.sql.exec("INSERT INTO profiles (user_id,bio,avatar_url,banner_url,background_url,updated_at) VALUES (?,?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET bio=excluded.bio,avatar_url=excluded.avatar_url,banner_url=excluded.banner_url,background_url=excluded.background_url,updated_at=excluded.updated_at", data.userId, bio, avatarUrl, bannerUrl, backgroundUrl, Date.now());
+      const title = typeof data.title === "string" ? data.title.trim().slice(0, 40) : "";
+      const musicUrl = typeof data.musicUrl === "string" ? data.musicUrl.trim().slice(0, 500) : "";
+      for (const value of [avatarUrl,bannerUrl,backgroundUrl,musicUrl]) if (value && !/^https:\/\//i.test(value)) return json({ error: "Alle Links müssen HTTPS verwenden." }, 400);
+      if (musicUrl && !one("SELECT item_id FROM user_items WHERE user_id=? AND item_id='music_profile'", data.userId)) return json({ error: "Du benötigst zuerst das Profil-Musik-Cosmetic aus dem Shop." }, 403);
+      this.sql.exec("INSERT INTO profiles (user_id,bio,avatar_url,banner_url,background_url,title,music_url,updated_at) VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET bio=excluded.bio,avatar_url=excluded.avatar_url,banner_url=excluded.banner_url,background_url=excluded.background_url,title=excluded.title,music_url=excluded.music_url,updated_at=excluded.updated_at", data.userId, bio, avatarUrl, bannerUrl, backgroundUrl, title, musicUrl, Date.now());
       return json({ ok: true });
     }
     if (path === "/community/friends") {
