@@ -267,6 +267,7 @@ export default {
       if (action === "daily/claim" && request.method === "POST") return storeCall(env, "/community/daily-claim", payload);
       if (action === "stats" && request.method === "GET") return storeCall(env, "/community/stats", payload);
       if (action === "custom-roles" && request.method === "GET") return storeCall(env, "/community/custom-roles", payload);
+      if (action === "custom-role-assign" && request.method === "POST") { if (auth.user.role !== "owner") return json({error:"Nur der Owner darf Rollen zuweisen."},403); return storeCall(env, "/community/custom-role-assign", payload); }
       if (action === "custom-roles" && request.method === "POST") { if (auth.user.role !== "owner") return json({error:"Nur der Owner darf eigene Rollen verwalten."},403); return storeCall(env, "/community/custom-roles-save", payload); }
       if (action === "custom-roles" && request.method === "DELETE") { if (auth.user.role !== "owner") return json({error:"Nur der Owner darf eigene Rollen verwalten."},403); return storeCall(env, "/community/custom-roles-delete", {...payload,id:url.searchParams.get("id")||""}); }
       if (action === "events" && request.method === "GET") return storeCall(env, "/community/events", payload);
@@ -354,6 +355,7 @@ export class AuthStore extends DurableObject {
     this.sql.exec("CREATE TABLE IF NOT EXISTS chat_polls (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, channel TEXT NOT NULL, question TEXT NOT NULL, options_json TEXT NOT NULL, created_at INTEGER NOT NULL, ends_at INTEGER NOT NULL DEFAULT 0)");
     this.sql.exec("CREATE TABLE IF NOT EXISTS poll_votes (poll_id TEXT NOT NULL, user_id TEXT NOT NULL, option_index INTEGER NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY(poll_id,user_id))");
     this.sql.exec("CREATE TABLE IF NOT EXISTS custom_roles (id TEXT PRIMARY KEY, name TEXT NOT NULL, color TEXT NOT NULL, created_at INTEGER NOT NULL)");
+    this.sql.exec("CREATE TABLE IF NOT EXISTS user_custom_roles (user_id TEXT PRIMARY KEY, role_id TEXT NOT NULL, assigned_at INTEGER NOT NULL)");
     this.sql.exec("CREATE TABLE IF NOT EXISTS community_events (id TEXT PRIMARY KEY, title TEXT NOT NULL, description TEXT NOT NULL, starts_at INTEGER NOT NULL, ends_at INTEGER NOT NULL, created_by TEXT NOT NULL, created_at INTEGER NOT NULL)");
     this.sql.exec("CREATE TABLE IF NOT EXISTS event_participants (event_id TEXT NOT NULL, user_id TEXT NOT NULL, joined_at INTEGER NOT NULL, PRIMARY KEY(event_id,user_id))");
     this.sql.exec("CREATE TABLE IF NOT EXISTS notification_settings (user_id TEXT PRIMARY KEY, mentions INTEGER NOT NULL DEFAULT 1, dms INTEGER NOT NULL DEFAULT 1, friends INTEGER NOT NULL DEFAULT 1, events INTEGER NOT NULL DEFAULT 1)");
@@ -457,7 +459,14 @@ export class AuthStore extends DurableObject {
       const musicUnlocked = !!one("SELECT item_id FROM user_items WHERE user_id=? AND item_id='music_profile'", targetId);
       const user = one("SELECT id,name,role,created_at AS createdAt,equipped_item AS equippedItem,equipped_badge AS equippedBadge FROM users WHERE id=?", targetId);
       if (!user) return json({ error: "Mitglied nicht gefunden." }, 404);
-      const stats = one("SELECT xp,level FROM user_stats WHERE user_id=?", targetId) || { xp: 0, level: 1 };
+      let stats = one("SELECT xp,level FROM user_stats WHERE user_id=?", targetId) || { xp: 0, level: 1 };
+      if(user.role==="owner"){
+        stats={xp:4999,level:50};
+        this.sql.exec("INSERT INTO user_stats (user_id,xp,level,last_xp_at) VALUES (?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET xp=excluded.xp,level=excluded.level",targetId,stats.xp,stats.level,0);
+        for(const id of ["first_message","xp_100","level_5","level_10"])this.sql.exec("INSERT OR IGNORE INTO user_achievements (user_id,achievement_id,unlocked_at) VALUES (?,?,?)",targetId,id,Date.now());
+        for(const [id,pos] of [["first_message",0],["xp_100",1],["level_5",2],["level_10",3]])this.sql.exec("INSERT OR IGNORE INTO trophy_showcase (user_id,achievement_id,position) VALUES (?,?,?)",targetId,id,pos);
+      }
+      const customRole=one("SELECT r.id,r.name,r.color FROM user_custom_roles a JOIN custom_roles r ON r.id=a.role_id WHERE a.user_id=?",targetId);
       const activity = one("SELECT message_count AS messageCount FROM user_activity WHERE user_id=?",targetId) || {messageCount:0};
       const definitions=[["first_message","Erste Nachricht","💬"],["xp_100","100 XP gesammelt","⭐"],["level_5","Level 5 erreicht","🌟"],["level_10","Level 10 erreicht","👑"]];
       const achievements=this.sql.exec("SELECT achievement_id AS id,unlocked_at AS unlockedAt FROM user_achievements WHERE user_id=?",targetId).toArray();
@@ -465,7 +474,7 @@ export class AuthStore extends DurableObject {
       const conditions=[["first_message",stats.xp>=5],["xp_100",stats.xp>=100],["level_5",stats.level>=5],["level_10",stats.level>=10]];
       for(const [id,ok] of conditions) if(ok&&!unlocked.has(id)) { this.sql.exec("INSERT OR IGNORE INTO user_achievements (user_id,achievement_id,unlocked_at) VALUES (?,?,?)",targetId,id,Date.now()); unlocked.add(id); }
       const achievementList=definitions.map(([id,name,icon])=>({id,name,icon,unlocked:unlocked.has(id)}));
-      return json({ profile: { ...user, ...profile, equippedCosmetics, musicUnlocked, ...stats, ...activity, achievements: achievementList }, own: targetId === data.userId });
+      return json({ profile: { ...user, ...profile, ...stats, ...activity, customRole, equippedCosmetics, musicUnlocked, achievements: achievementList }, own: targetId === data.userId });
     }
     if (path === "/community/profile-save") {
       const bio = typeof data.bio === "string" ? data.bio.trim().slice(0, 240) : "";
@@ -555,14 +564,23 @@ export class AuthStore extends DurableObject {
       const achievements=this.sql.exec("SELECT achievement_id AS id,unlocked_at AS unlockedAt FROM user_achievements WHERE user_id=? ORDER BY unlocked_at",data.userId).toArray();
       return json({stats:{...stats,...activity,achievementCount:achievements.length,joinedAt:joined?.createdAt||0}});
     }
-    if (path === "/community/custom-roles") return json({roles:this.sql.exec("SELECT id,name,color,created_at AS createdAt FROM custom_roles ORDER BY created_at").toArray()});
+    if (path === "/community/custom-roles") return json({roles:this.sql.exec("SELECT id,name,color,created_at AS createdAt FROM custom_roles ORDER BY created_at").toArray(),users:this.sql.exec("SELECT id,name,role FROM users WHERE banned=0 AND role<>'owner' ORDER BY name COLLATE NOCASE").toArray().map(u=>({...u,customRoleId:one("SELECT role_id FROM user_custom_roles WHERE user_id=?",u.id)?.role_id||""}))});
     if (path === "/community/custom-roles-save") {
       const name=String(data.name||"").trim().slice(0,24),color=/^#[0-9a-f]{6}$/i.test(data.color||"")?data.color:"#8bdc72";
       if(name.length<2)return json({error:"Der Rollenname muss mindestens 2 Zeichen haben."},400);
       if(one("SELECT id FROM custom_roles WHERE name=? COLLATE NOCASE",name))return json({error:"Dieser Rollenname existiert bereits."},409);
       const id=crypto.randomUUID();this.sql.exec("INSERT INTO custom_roles (id,name,color,created_at) VALUES (?,?,?,?)",id,name,color,Date.now());return json({ok:true,id});
     }
-    if (path === "/community/custom-roles-delete") {this.sql.exec("DELETE FROM custom_roles WHERE id=?",data.id);return json({ok:true});}
+    if (path === "/community/custom-roles-delete") {this.sql.exec("DELETE FROM user_custom_roles WHERE role_id=?",data.id);this.sql.exec("DELETE FROM custom_roles WHERE id=?",data.id);return json({ok:true});}
+    if (path === "/community/custom-role-assign") {
+      const user=one("SELECT id,role FROM users WHERE id=? AND banned=0",data.targetUserId);
+      if(!user||user.role==="owner")return json({error:"Mitglied nicht gefunden oder nicht änderbar."},404);
+      if(!data.roleId){this.sql.exec("DELETE FROM user_custom_roles WHERE user_id=?",user.id);return json({ok:true,role:null});}
+      const role=one("SELECT id,name,color FROM custom_roles WHERE id=?",data.roleId);
+      if(!role)return json({error:"Diese eigene Rolle existiert nicht mehr."},404);
+      this.sql.exec("INSERT INTO user_custom_roles (user_id,role_id,assigned_at) VALUES (?,?,?) ON CONFLICT(user_id) DO UPDATE SET role_id=excluded.role_id,assigned_at=excluded.assigned_at",user.id,role.id,Date.now());
+      return json({ok:true,role});
+    }
     if (path === "/community/events") {
       const events=this.sql.exec("SELECT e.id,e.title,e.description,e.starts_at AS startsAt,e.ends_at AS endsAt,e.created_by AS createdBy,u.name AS creator,(SELECT COUNT(*) FROM event_participants p WHERE p.event_id=e.id) AS participants FROM community_events e JOIN users u ON u.id=e.created_by WHERE e.ends_at>=? ORDER BY e.starts_at LIMIT 30",Date.now()).toArray().map(e=>({...e,joined:!!one("SELECT user_id FROM event_participants WHERE event_id=? AND user_id=?",e.id,data.userId)}));
       return json({events});
@@ -594,7 +612,8 @@ export class AuthStore extends DurableObject {
     }
     if (path === "/community/trophies-save") {
       const unlocked=new Set(this.sql.exec("SELECT achievement_id AS id FROM user_achievements WHERE user_id=?",data.userId).toArray().map(x=>x.id));
-      const ids=Array.isArray(data.ids)?[...new Set(data.ids.filter(x=>typeof x==="string"&&unlocked.has(x)))].slice(0,3):[];
+      const owner=!!one("SELECT id FROM users WHERE id=? AND role='owner'",data.userId);
+      const ids=owner?["first_message","xp_100","level_5","level_10"].filter(id=>unlocked.has(id)):(Array.isArray(data.ids)?[...new Set(data.ids.filter(x=>typeof x==="string"&&unlocked.has(x)))].slice(0,3):[]);
       this.sql.exec("DELETE FROM trophy_showcase WHERE user_id=?",data.userId);ids.forEach((id,i)=>this.sql.exec("INSERT INTO trophy_showcase (user_id,achievement_id,position) VALUES (?,?,?)",data.userId,id,i));return json({ok:true,ids});
     }
     if (path === "/community/reactions-get") {
