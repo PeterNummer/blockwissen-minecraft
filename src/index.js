@@ -259,6 +259,23 @@ export default {
       const action = url.pathname.slice("/api/community/".length);
       const payload = { ...data, userId: auth.user.id };
       if (action === "profile" && request.method === "GET") payload.targetId = url.searchParams.get("id") || auth.user.id;
+
+      if (action === "polls" && request.method === "GET") return storeCall(env, "/community/polls", payload);
+      if (action === "polls" && request.method === "POST") return storeCall(env, "/community/polls-create", payload);
+      if (action === "poll-vote" && request.method === "POST") return storeCall(env, "/community/poll-vote", payload);
+      if (action === "daily" && request.method === "GET") return storeCall(env, "/community/daily", payload);
+      if (action === "daily/claim" && request.method === "POST") return storeCall(env, "/community/daily-claim", payload);
+      if (action === "stats" && request.method === "GET") return storeCall(env, "/community/stats", payload);
+      if (action === "custom-roles" && request.method === "GET") return storeCall(env, "/community/custom-roles", payload);
+      if (action === "custom-roles" && request.method === "POST") { if (auth.user.role !== "owner") return json({error:"Nur der Owner darf eigene Rollen verwalten."},403); return storeCall(env, "/community/custom-roles-save", payload); }
+      if (action === "custom-roles" && request.method === "DELETE") { if (auth.user.role !== "owner") return json({error:"Nur der Owner darf eigene Rollen verwalten."},403); return storeCall(env, "/community/custom-roles-delete", {...payload,id:url.searchParams.get("id")||""}); }
+      if (action === "events" && request.method === "GET") return storeCall(env, "/community/events", payload);
+      if (action === "events" && request.method === "POST") { if (!["owner","admin","moderator"].includes(auth.user.role)) return json({error:"Nur Teammitglieder dürfen Events erstellen."},403); return storeCall(env, "/community/events-create", payload); }
+      if (action === "event-join" && request.method === "POST") return storeCall(env, "/community/event-join", payload);
+      if (action === "notification-settings" && request.method === "GET") return storeCall(env, "/community/notification-settings", payload);
+      if (action === "notification-settings" && request.method === "POST") return storeCall(env, "/community/notification-settings-save", payload);
+      if (action === "trophies" && request.method === "GET") return storeCall(env, "/community/trophies", payload);
+      if (action === "trophies" && request.method === "POST") return storeCall(env, "/community/trophies-save", payload);
       if (action === "members" && request.method === "GET") return storeCall(env, "/community/members", payload);
       if (action === "notifications" && request.method === "GET") return storeCall(env, "/community/notifications", payload);
       if (action === "notifications/read" && request.method === "POST") return storeCall(env, "/community/notifications-read", payload);
@@ -322,6 +339,7 @@ export class AuthStore extends DurableObject {
     try { this.sql.exec("ALTER TABLE profiles ADD COLUMN music_url TEXT NOT NULL DEFAULT ''"); } catch {}
     try { this.sql.exec("ALTER TABLE profiles ADD COLUMN banner_url TEXT NOT NULL DEFAULT ''"); } catch {}
     try { this.sql.exec("ALTER TABLE profiles ADD COLUMN background_url TEXT NOT NULL DEFAULT ''"); } catch {}
+    try { this.sql.exec("ALTER TABLE profiles ADD COLUMN banner_effect TEXT NOT NULL DEFAULT 'none'"); } catch {}
     this.sql.exec("CREATE TABLE IF NOT EXISTS friend_requests (id TEXT PRIMARY KEY, sender_id TEXT NOT NULL, recipient_id TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', created_at INTEGER NOT NULL, UNIQUE(sender_id,recipient_id))");
     this.sql.exec("CREATE TABLE IF NOT EXISTS user_preferences (user_id TEXT PRIMARY KEY, theme TEXT NOT NULL DEFAULT 'default', updated_at INTEGER NOT NULL)");
     this.sql.exec("CREATE TABLE IF NOT EXISTS user_achievements (user_id TEXT NOT NULL, achievement_id TEXT NOT NULL, unlocked_at INTEGER NOT NULL, PRIMARY KEY(user_id,achievement_id))");
@@ -330,6 +348,17 @@ export class AuthStore extends DurableObject {
     this.sql.exec("CREATE TABLE IF NOT EXISTS notifications (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, kind TEXT NOT NULL, text TEXT NOT NULL, created_at INTEGER NOT NULL, read_at INTEGER NOT NULL DEFAULT 0)");
     this.sql.exec("CREATE TABLE IF NOT EXISTS user_stats (user_id TEXT PRIMARY KEY, xp INTEGER NOT NULL DEFAULT 0, level INTEGER NOT NULL DEFAULT 1, last_xp_at INTEGER NOT NULL DEFAULT 0)");
     this.sql.exec("CREATE TABLE IF NOT EXISTS user_presence (user_id TEXT PRIMARY KEY, last_seen INTEGER NOT NULL)");
+
+    this.sql.exec("CREATE TABLE IF NOT EXISTS user_activity (user_id TEXT PRIMARY KEY, message_count INTEGER NOT NULL DEFAULT 0, daily_date TEXT NOT NULL DEFAULT '', daily_messages INTEGER NOT NULL DEFAULT 0)");
+    this.sql.exec("CREATE TABLE IF NOT EXISTS daily_claims (user_id TEXT NOT NULL, claim_date TEXT NOT NULL, claimed_at INTEGER NOT NULL, PRIMARY KEY(user_id,claim_date))");
+    this.sql.exec("CREATE TABLE IF NOT EXISTS chat_polls (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, channel TEXT NOT NULL, question TEXT NOT NULL, options_json TEXT NOT NULL, created_at INTEGER NOT NULL, ends_at INTEGER NOT NULL DEFAULT 0)");
+    this.sql.exec("CREATE TABLE IF NOT EXISTS poll_votes (poll_id TEXT NOT NULL, user_id TEXT NOT NULL, option_index INTEGER NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY(poll_id,user_id))");
+    this.sql.exec("CREATE TABLE IF NOT EXISTS custom_roles (id TEXT PRIMARY KEY, name TEXT NOT NULL, color TEXT NOT NULL, created_at INTEGER NOT NULL)");
+    this.sql.exec("CREATE TABLE IF NOT EXISTS community_events (id TEXT PRIMARY KEY, title TEXT NOT NULL, description TEXT NOT NULL, starts_at INTEGER NOT NULL, ends_at INTEGER NOT NULL, created_by TEXT NOT NULL, created_at INTEGER NOT NULL)");
+    this.sql.exec("CREATE TABLE IF NOT EXISTS event_participants (event_id TEXT NOT NULL, user_id TEXT NOT NULL, joined_at INTEGER NOT NULL, PRIMARY KEY(event_id,user_id))");
+    this.sql.exec("CREATE TABLE IF NOT EXISTS notification_settings (user_id TEXT PRIMARY KEY, mentions INTEGER NOT NULL DEFAULT 1, dms INTEGER NOT NULL DEFAULT 1, friends INTEGER NOT NULL DEFAULT 1, events INTEGER NOT NULL DEFAULT 1)");
+    this.sql.exec("CREATE TABLE IF NOT EXISTS trophy_showcase (user_id TEXT NOT NULL, achievement_id TEXT NOT NULL, position INTEGER NOT NULL, PRIMARY KEY(user_id,achievement_id))");
+
 
 
   }
@@ -423,7 +452,7 @@ export class AuthStore extends DurableObject {
     }
     if (path === "/community/profile-get") {
       const targetId = data.targetId || data.userId;
-      const profile = one("SELECT bio,avatar_url AS avatarUrl,banner_url AS bannerUrl,background_url AS backgroundUrl,title,music_url AS musicUrl,updated_at AS updatedAt FROM profiles WHERE user_id=?", targetId) || { bio: "", avatarUrl: "", bannerUrl: "", backgroundUrl: "", title: "", musicUrl: "", updatedAt: 0 };
+      const profile = one("SELECT bio,avatar_url AS avatarUrl,banner_url AS bannerUrl,background_url AS backgroundUrl,banner_effect AS bannerEffect,title,music_url AS musicUrl,updated_at AS updatedAt FROM profiles WHERE user_id=?", targetId) || { bio: "", avatarUrl: "", bannerUrl: "", backgroundUrl: "", bannerEffect:"none", title: "", musicUrl: "", updatedAt: 0 };
       const equippedCosmetics = Object.fromEntries(this.sql.exec("SELECT slot,item_id AS itemId FROM user_cosmetics WHERE user_id=?", targetId).toArray().map(item => [item.slot,item.itemId]));
       const musicUnlocked = !!one("SELECT item_id FROM user_items WHERE user_id=? AND item_id='music_profile'", targetId);
       const user = one("SELECT id,name,role,created_at AS createdAt,equipped_item AS equippedItem,equipped_badge AS equippedBadge FROM users WHERE id=?", targetId);
@@ -443,10 +472,11 @@ export class AuthStore extends DurableObject {
       const bannerUrl = typeof data.bannerUrl === "string" ? data.bannerUrl.trim().slice(0, 500) : "";
       const backgroundUrl = typeof data.backgroundUrl === "string" ? data.backgroundUrl.trim().slice(0, 500) : "";
       const title = typeof data.title === "string" ? data.title.trim().slice(0, 40) : "";
+      const bannerEffect = ["none","shimmer","float","stars"].includes(data.bannerEffect)?data.bannerEffect:"none";
       const musicUrl = typeof data.musicUrl === "string" ? data.musicUrl.trim().slice(0, 500) : "";
       for (const value of [avatarUrl,bannerUrl,backgroundUrl,musicUrl]) if (value && !/^https:\/\//i.test(value)) return json({ error: "Alle Links müssen HTTPS verwenden." }, 400);
       if (musicUrl && !one("SELECT item_id FROM user_items WHERE user_id=? AND item_id='music_profile'", data.userId)) return json({ error: "Du benötigst zuerst das Profil-Musik-Cosmetic aus dem Shop." }, 403);
-      this.sql.exec("INSERT INTO profiles (user_id,bio,avatar_url,banner_url,background_url,title,music_url,updated_at) VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET bio=excluded.bio,avatar_url=excluded.avatar_url,banner_url=excluded.banner_url,background_url=excluded.background_url,title=excluded.title,music_url=excluded.music_url,updated_at=excluded.updated_at", data.userId, bio, avatarUrl, bannerUrl, backgroundUrl, title, musicUrl, Date.now());
+      this.sql.exec("INSERT INTO profiles (user_id,bio,avatar_url,banner_url,background_url,banner_effect,title,music_url,updated_at) VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET bio=excluded.bio,avatar_url=excluded.avatar_url,banner_url=excluded.banner_url,background_url=excluded.background_url,banner_effect=excluded.banner_effect,title=excluded.title,music_url=excluded.music_url,updated_at=excluded.updated_at", data.userId, bio, avatarUrl, bannerUrl, backgroundUrl, bannerEffect, title, musicUrl, Date.now());
       return json({ ok: true });
     }
     if (path === "/community/friends") {
@@ -485,6 +515,81 @@ export class AuthStore extends DurableObject {
       const theme=allowed.includes(data.theme)?data.theme:"default";
       this.sql.exec("INSERT INTO user_preferences (user_id,theme,updated_at) VALUES (?,?,?) ON CONFLICT(user_id) DO UPDATE SET theme=excluded.theme,updated_at=excluded.updated_at",data.userId,theme,Date.now());
       return json({ok:true,theme});
+    }
+
+    if (path === "/community/polls") {
+      const polls=this.sql.exec("SELECT p.id,p.user_id AS userId,u.name AS creator,p.channel,p.question,p.options_json AS optionsJson,p.created_at AS createdAt,p.ends_at AS endsAt FROM chat_polls p JOIN users u ON u.id=p.user_id ORDER BY p.created_at DESC LIMIT 30").toArray();
+      return json({polls:polls.map(p=>{const counts=this.sql.exec("SELECT option_index AS optionIndex,COUNT(*) AS count FROM poll_votes WHERE poll_id=? GROUP BY option_index",p.id).toArray();const mine=one("SELECT option_index AS optionIndex FROM poll_votes WHERE poll_id=? AND user_id=?",p.id,data.userId);return {...p,options:JSON.parse(p.optionsJson),counts,myVote:mine?mine.optionIndex:null};})});
+    }
+    if (path === "/community/polls-create") {
+      const question=String(data.question||"").trim().slice(0,120), options=Array.isArray(data.options)?data.options.map(x=>String(x).trim().slice(0,80)).filter(Boolean):[];
+      if(question.length<4||options.length<2||options.length>5||new Set(options).size!==options.length)return json({error:"Bitte eine Frage und 2 bis 5 unterschiedliche Antwortmöglichkeiten angeben."},400);
+      const id=crypto.randomUUID(),now=Date.now(),channel=["welcome","minecraft","offtopic"].includes(data.channel)?data.channel:"welcome";
+      this.sql.exec("INSERT INTO chat_polls (id,user_id,channel,question,options_json,created_at,ends_at) VALUES (?,?,?,?,?,?,?)",id,data.userId,channel,question,JSON.stringify(options),now,now+7*86400000);
+      return json({ok:true,id});
+    }
+    if (path === "/community/poll-vote") {
+      const poll=one("SELECT options_json AS optionsJson,ends_at AS endsAt FROM chat_polls WHERE id=?",data.pollId);
+      const index=Number(data.optionIndex),opts=poll?JSON.parse(poll.optionsJson):[];
+      if(!poll||Date.now()>poll.endsAt||!Number.isInteger(index)||index<0||index>=opts.length)return json({error:"Diese Umfrage ist nicht mehr verfügbar."},400);
+      this.sql.exec("INSERT INTO poll_votes (poll_id,user_id,option_index,created_at) VALUES (?,?,?,?) ON CONFLICT(poll_id,user_id) DO UPDATE SET option_index=excluded.option_index,created_at=excluded.created_at",data.pollId,data.userId,index,Date.now());
+      return json({ok:true});
+    }
+    if (path === "/community/daily") {
+      const today=new Date().toLocaleDateString("en-CA",{timeZone:"Europe/Berlin"}),row=one("SELECT message_count AS messageCount,daily_date AS dailyDate,daily_messages AS dailyMessages FROM user_activity WHERE user_id=?",data.userId)||{messageCount:0,dailyDate:"",dailyMessages:0};
+      const progress=row.dailyDate===today?row.dailyMessages:0,claimed=!!one("SELECT user_id FROM daily_claims WHERE user_id=? AND claim_date=?",data.userId,today);
+      return json({date:today,mission:{id:"daily-chat-3",title:"Gesprächsstarter",description:"Schreibe heute 3 Chatnachrichten.",progress:Math.min(progress,3),target:3,reward:30,claimed},messageCount:row.messageCount});
+    }
+    if (path === "/community/daily-claim") {
+      const today=new Date().toLocaleDateString("en-CA",{timeZone:"Europe/Berlin"}),row=one("SELECT daily_date AS dailyDate,daily_messages AS dailyMessages FROM user_activity WHERE user_id=?",data.userId);
+      if(!row||row.dailyDate!==today||row.dailyMessages<3)return json({error:"Schreibe zuerst 3 Nachrichten, um die Mission abzuschließen."},400);
+      if(one("SELECT user_id FROM daily_claims WHERE user_id=? AND claim_date=?",data.userId,today))return json({error:"Die Tagesbelohnung wurde bereits abgeholt."},409);
+      this.sql.exec("INSERT INTO daily_claims (user_id,claim_date,claimed_at) VALUES (?,?,?)",data.userId,today,Date.now());
+      this.sql.exec("UPDATE users SET coins=coins+30 WHERE id=?",data.userId);
+      return json({ok:true,reward:30,coins:one("SELECT coins FROM users WHERE id=?",data.userId).coins});
+    }
+    if (path === "/community/stats") {
+      const stats=one("SELECT xp,level FROM user_stats WHERE user_id=?",data.userId)||{xp:0,level:1},activity=one("SELECT message_count AS messageCount FROM user_activity WHERE user_id=?",data.userId)||{messageCount:0};
+      const joined=one("SELECT created_at AS createdAt FROM users WHERE id=?",data.userId);
+      const achievements=this.sql.exec("SELECT achievement_id AS id,unlocked_at AS unlockedAt FROM user_achievements WHERE user_id=? ORDER BY unlocked_at",data.userId).toArray();
+      return json({stats:{...stats,...activity,achievementCount:achievements.length,joinedAt:joined?.createdAt||0}});
+    }
+    if (path === "/community/custom-roles") return json({roles:this.sql.exec("SELECT id,name,color,created_at AS createdAt FROM custom_roles ORDER BY created_at").toArray()});
+    if (path === "/community/custom-roles-save") {
+      const name=String(data.name||"").trim().slice(0,24),color=/^#[0-9a-f]{6}$/i.test(data.color||"")?data.color:"#8bdc72";
+      if(name.length<2)return json({error:"Der Rollenname muss mindestens 2 Zeichen haben."},400);
+      if(one("SELECT id FROM custom_roles WHERE name=? COLLATE NOCASE",name))return json({error:"Dieser Rollenname existiert bereits."},409);
+      const id=crypto.randomUUID();this.sql.exec("INSERT INTO custom_roles (id,name,color,created_at) VALUES (?,?,?,?)",id,name,color,Date.now());return json({ok:true,id});
+    }
+    if (path === "/community/custom-roles-delete") {this.sql.exec("DELETE FROM custom_roles WHERE id=?",data.id);return json({ok:true});}
+    if (path === "/community/events") {
+      const events=this.sql.exec("SELECT e.id,e.title,e.description,e.starts_at AS startsAt,e.ends_at AS endsAt,e.created_by AS createdBy,u.name AS creator,(SELECT COUNT(*) FROM event_participants p WHERE p.event_id=e.id) AS participants FROM community_events e JOIN users u ON u.id=e.created_by WHERE e.ends_at>=? ORDER BY e.starts_at LIMIT 30",Date.now()).toArray().map(e=>({...e,joined:!!one("SELECT user_id FROM event_participants WHERE event_id=? AND user_id=?",e.id,data.userId)}));
+      return json({events});
+    }
+    if (path === "/community/events-create") {
+      const title=String(data.title||"").trim().slice(0,70),description=String(data.description||"").trim().slice(0,300),starts=Number(data.startsAt),ends=Number(data.endsAt);
+      if(title.length<3||!Number.isFinite(starts)||!Number.isFinite(ends)||starts<Date.now()-60000||ends<=starts||ends>starts+30*86400000)return json({error:"Bitte gültigen Titel und Event-Zeitraum (maximal 30 Tage) angeben."},400);
+      const id=crypto.randomUUID();this.sql.exec("INSERT INTO community_events (id,title,description,starts_at,ends_at,created_by,created_at) VALUES (?,?,?,?,?,?,?)",id,title,description,starts,ends,data.userId,Date.now());return json({ok:true,id});
+    }
+    if (path === "/community/event-join") {
+      if(!one("SELECT id FROM community_events WHERE id=? AND ends_at>=?",data.eventId,Date.now()))return json({error:"Event nicht gefunden oder beendet."},404);
+      this.sql.exec("INSERT OR IGNORE INTO event_participants (event_id,user_id,joined_at) VALUES (?,?,?)",data.eventId,data.userId,Date.now());return json({ok:true});
+    }
+    if (path === "/community/notification-settings") {
+      return json({settings:one("SELECT mentions,dms,friends,events FROM notification_settings WHERE user_id=?",data.userId)||{mentions:1,dms:1,friends:1,events:1}});
+    }
+    if (path === "/community/notification-settings-save") {
+      const values=["mentions","dms","friends","events"].map(k=>data[k]===false?0:1);
+      this.sql.exec("INSERT INTO notification_settings (user_id,mentions,dms,friends,events) VALUES (?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET mentions=excluded.mentions,dms=excluded.dms,friends=excluded.friends,events=excluded.events",data.userId,...values);return json({ok:true});
+    }
+    if (path === "/community/trophies") {
+      const unlocked=this.sql.exec("SELECT achievement_id AS id FROM user_achievements WHERE user_id=?",data.userId).toArray().map(x=>x.id);
+      const selected=this.sql.exec("SELECT achievement_id AS id,position FROM trophy_showcase WHERE user_id=? ORDER BY position",data.userId).toArray();return json({unlocked,selected});
+    }
+    if (path === "/community/trophies-save") {
+      const unlocked=new Set(this.sql.exec("SELECT achievement_id AS id FROM user_achievements WHERE user_id=?",data.userId).toArray().map(x=>x.id));
+      const ids=Array.isArray(data.ids)?[...new Set(data.ids.filter(x=>typeof x==="string"&&unlocked.has(x)))].slice(0,3):[];
+      this.sql.exec("DELETE FROM trophy_showcase WHERE user_id=?",data.userId);ids.forEach((id,i)=>this.sql.exec("INSERT INTO trophy_showcase (user_id,achievement_id,position) VALUES (?,?,?)",data.userId,id,i));return json({ok:true,ids});
     }
     if (path === "/community/reactions-get") {
       if (!data.messageId) return json({ reactions: [] });
@@ -540,6 +645,9 @@ export class AuthStore extends DurableObject {
       else this.sql.exec("INSERT INTO message_reactions (message_id,user_id,emoji,created_at) VALUES (?,?,?,?)", data.messageId, data.userId, emoji, Date.now());
       return json({ reactions: this.sql.exec("SELECT emoji,COUNT(*) AS count FROM message_reactions WHERE message_id=? GROUP BY emoji", data.messageId).toArray() });
     }
+
+      const today=new Date().toLocaleDateString("en-CA",{timeZone:"Europe/Berlin"});
+      this.sql.exec("INSERT INTO user_activity (user_id,message_count,daily_date,daily_messages) VALUES (?,1,?,1) ON CONFLICT(user_id) DO UPDATE SET message_count=message_count+1,daily_messages=CASE WHEN daily_date=excluded.daily_date THEN daily_messages+1 ELSE 1 END,daily_date=excluded.daily_date",data.userId,today);
     if (path === "/community/xp") {
       const row = one("SELECT xp,level,last_xp_at AS lastXpAt FROM user_stats WHERE user_id=?", data.userId) || { xp: 0, level: 1, lastXpAt: 0 };
       if (Date.now() - row.lastXpAt < 30000) return json({ xp: row.xp, level: row.level, gained: 0 });
