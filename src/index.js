@@ -683,7 +683,7 @@ export class ChatRoom extends DurableObject {
     if (data.type === "sticker") {
       const stickerOwned = Object.values(attachment.equippedCosmetics || {}).some(id => id === "sticker_minecraft" || id === "sticker_fun");
       const sticker = ["⛏️","🧱","🌳","💎","🐉","🎉","😂","❤️","⭐","🔥","🚀","🌙"].includes(data.emoji) ? data.emoji : "";
-      if (!stickerOwned || !sticker) { ws.send(JSON.stringify({ type: "error", message: "Sticker sind nicht freigeschaltet oder ungültig." })); return; }
+      if (!stickerOwned || !sticker) { ws.send(JSON.stringify({ type: "notice", message: "Sticker sind nicht freigeschaltet oder ungültig." })); return; }
       const stickerMessage = { id: crypto.randomUUID(), userId: attachment.id, name: attachment.name, role: attachment.role, equippedItem: attachment.equippedItem || "", equippedBadge: attachment.equippedBadge || "", equippedCosmetics: attachment.equippedCosmetics || {}, text: sticker, sticker: true, time: Date.now() };
       history.push(stickerMessage);
       await this.ctx.storage.put("history", history.slice(-100));
