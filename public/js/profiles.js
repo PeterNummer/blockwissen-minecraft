@@ -53,7 +53,7 @@
         view.append(achievementBox);
       }
       try {
-        const trophyData=await api('trophies');
+        const trophyData=await api('trophies?id='+encodeURIComponent(p.id));
         const showcase=el('div','profile-trophy-showcase');showcase.append(el('h3','','🏆 Trophäen-Vitrine'));
         const labels={first_message:'Erste Nachricht',xp_100:'100 XP',level_5:'Level 5',level_10:'Level 10'};
         const selected=trophyData.selected||[];
