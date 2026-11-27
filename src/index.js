@@ -599,14 +599,28 @@ export class ChatRoom extends DurableObject {
       for (const message of history) {
         if (message.userId !== update.userId) continue;
         if (update.itemType === "badge") message.equippedBadge = update.itemId || "";
-        else message.equippedItem = update.itemId || "";
+        else if (update.itemType === "name") message.equippedItem = update.itemId || "";
+        else {
+          message.equippedCosmetics = message.equippedCosmetics || {};
+          if (update.itemId) message.equippedCosmetics[update.itemType] = update.itemId;
+          else delete message.equippedCosmetics[update.itemType];
+        }
       }
       await this.ctx.storage.put("history", history);
       for (const socket of this.ctx.getWebSockets()) {
         const state = socket.deserializeAttachment() || {};
-        if (state.id === update.userId) socket.serializeAttachment({ ...state, ...(update.itemType === "badge" ? { equippedBadge: update.itemId || "" } : { equippedItem: update.itemId || "" }) });
+        if (state.id === update.userId) {
+          if (update.itemType === "badge") socket.serializeAttachment({ ...state, equippedBadge: update.itemId || "" });
+          else if (update.itemType === "name") socket.serializeAttachment({ ...state, equippedItem: update.itemId || "" });
+          else {
+            const equippedCosmetics = { ...(state.equippedCosmetics || {}) };
+            if (update.itemId) equippedCosmetics[update.itemType] = update.itemId;
+            else delete equippedCosmetics[update.itemType];
+            socket.serializeAttachment({ ...state, equippedCosmetics });
+          }
+        }
         if (state?.authenticated && socket.readyState === WebSocket.OPEN) {
-          try { socket.send(JSON.stringify({ type: "cosmetic_update", userId: update.userId, itemId: update.itemId || "", itemType: update.itemType === "badge" ? "badge" : "name" })); } catch {}
+          try { socket.send(JSON.stringify({ type: "cosmetic_update", userId: update.userId, itemId: update.itemId || "", itemType: update.itemType })); } catch {}
         }
       }
       return json({ ok: true });
@@ -641,7 +655,7 @@ export class ChatRoom extends DurableObject {
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
     this.ctx.acceptWebSocket(server);
-    server.serializeAttachment({ authenticated: true, id: user.id, name: user.name, role: user.role, equippedItem: user.equippedItem || "", equippedBadge: user.equippedBadge || "", lastMessageAt: 0 });
+    server.serializeAttachment({ authenticated: true, id: user.id, name: user.name, role: user.role, equippedItem: user.equippedItem || "", equippedBadge: user.equippedBadge || "", equippedCosmetics: user.equippedCosmetics || {}, lastMessageAt: 0 });
     const history = await this.ctx.storage.get("history") || [];
     server.send(JSON.stringify({ type: "history", messages: history }));
     return new Response(null, { status: 101, webSocket: client });
@@ -663,6 +677,16 @@ export class ChatRoom extends DurableObject {
     if (data.type === "presence_ping") {
       const authId = this.env.AUTH_STORE.idFromName("tyqora-auth");
       await this.env.AUTH_STORE.get(authId).fetch("https://auth.internal/presence", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: attachment.id }) });
+      return;
+    }
+    if (data.type === "sticker") {
+      const stickerOwned = Object.values(attachment.equippedCosmetics || {}).some(id => id === "sticker_minecraft" || id === "sticker_fun");
+      const sticker = ["⛏️","🧱","🌳","💎","🐉","🎉","😂","❤️","⭐","🔥","🚀","🌙"].includes(data.emoji) ? data.emoji : "";
+      if (!stickerOwned || !sticker) { ws.send(JSON.stringify({ type: "error", message: "Sticker sind nicht freigeschaltet oder ungültig." })); return; }
+      const stickerMessage = { id: crypto.randomUUID(), userId: attachment.id, name: attachment.name, role: attachment.role, equippedItem: attachment.equippedItem || "", equippedBadge: attachment.equippedBadge || "", equippedCosmetics: attachment.equippedCosmetics || {}, text: sticker, sticker: true, time: Date.now() };
+      history.push(stickerMessage);
+      await this.ctx.storage.put("history", history.slice(-100));
+      broadcast({ type: "message", message: stickerMessage });
       return;
     }
     if (data.type === "message_pin") {
@@ -755,7 +779,7 @@ export class ChatRoom extends DurableObject {
       return;
     }
     ws.serializeAttachment({ ...attachment, lastMessageAt: now });
-    const message = { id: crypto.randomUUID(), userId: attachment.id, name: attachment.name, role: attachment.role, equippedItem: attachment.equippedItem || "", equippedBadge: attachment.equippedBadge || "", text, time: now };
+    const message = { id: crypto.randomUUID(), userId: attachment.id, name: attachment.name, role: attachment.role, equippedItem: attachment.equippedItem || "", equippedBadge: attachment.equippedBadge || "", equippedCosmetics: attachment.equippedCosmetics || {}, text, time: now };
     history.push(message);
     await this.ctx.storage.put("history", history.slice(-100));
     broadcast({ type: "message", message });
